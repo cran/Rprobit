@@ -1,0 +1,366 @@
+---
+title: "Model Definition"
+output:
+  rmarkdown::html_vignette:
+    math_method: r-katex
+bibliography: references.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{Model Definition}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r global-options, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE
+)
+```
+
+```{r setup, echo = FALSE}
+library(Rprobit)
+```
+
+## The Multinomial Probit Model
+
+The multinomial probit model[^1] provides a mathematical representation of process of choosing one out of a finite number of mutually exclusive alternatives depending on a number of regressor variables characterizing the alternatives and the decider. It possesses the interpretation of a random utility maximization (RUM) model, whereby a decider assigns a utility value to each alternative and picks the one with highest utility. As the modeler does not have full information, the model represents the utility using a systematic part, depending on regressor variables, plus an additive error term, which for probit models is normally distributed [@Agresti:2015].
+
+[^1]: The name *probit* is a portmanteau of *prob*ability and un*it*. [@Bliss:1934]
+
+The model output are conditional choice probabilities depending on the regressor values.[^2] The regressor variables potentially consist of characteristics describing the alternatives and the deciders. To be concrete, assume that we possess data of $N$ decision makers which choose between $J \geq 2$ alternatives at each of $T$ choice occasions[^3]. One example can be the choice of one out of a number of cars, both conventional and electric, for the next purchase. Specific to each decision maker, alternative and choice occasion, we observe $P$ choice attributes (like the purchase price, for example) that we use to explain the choices. Decider $n$'s utility $U_{ntj}$ for alternative $j$ at choice occasion $t$ is modeled as
+
+[^2]: An alternative way to view the probit model is that it provides a function linking regressors to choice probabilities. The RUM interpretation is only one viewpoint. Thus one does not have to believe in rational behavior to use the probit models.
+
+[^3]: For notational simplicity, the number of choice occasions $T$ is assumed to be the same for each decision maker here. However, we are not restricted to this case: **Rprobit** allows for unbalanced panels, i.e. varying $T$ over deciders. Of course, the cross-sectional case $T = 1$ is possible.
+
+$$
+U_{ntj} = X_{ntj}'\beta + S_{nt}' \gamma_j + Z_{ntj}'\delta_j + \alpha_j + \epsilon_{ntj}
+$$
+
+for $n=1,\dots,N$, $t=1,\dots,T$ and $j=1,\dots,J$, where
+
+- $X_{ntj}$ ($Z_{ntj}$) is a (column) vector of $P$ ($P_Z$) characteristics of alternative $j$ as faced by $n$ at choice occasion $t$,
+
+- $S_{nt}$ is a (column) vector of $P_S$ characteristics of the decider $n$ at occasion $t$,
+
+- $\beta \in {\mathbb R}^{P}, \gamma_j \in {\mathbb R}^{P_S}, \delta_j \in {\mathbb R}^{P_Z}$ is a vector of coefficients,
+
+- $\alpha_j \in {\mathbb R}$ are called alternative specific constants (ASCs),
+
+- and $(\epsilon_{nt:}) = (\epsilon_{nt1},\dots,\epsilon_{ntJ})' \sim \text{MVN}_{J} (0,\Sigma)$ is the model's error term vector for $n$ at $t$, which in the probit model is assumed to be multivariate normally distributed with zero mean and covariance matrix $\Sigma$. Details on how such data sets are represented in **Rprobit** are given in the vignette [Data and Simulation](data_simulation.html).
+
+The three types of regressor variables are called
+
+- type I variables ($X_{ntj}$) that vary over alternatives but influence the utility with a common coefficient (that is, not depending on the alternative),
+
+- type II variables ($S_{nt}$) that do not vary over alternatives and influence the utility with coefficients differing over alternatives,
+
+- type III variables ($Z_{ntj}$) that vary over alternatives but influence the utility with coefficients differing over alternatives.
+
+Now let $y_{nt}=j$ denote the event that decision maker $n$ chooses alternative $j$ at her $t$-th choice occasion. Assuming utility maximizing behavior of the decision makers, the decisions are linked to the utilities via[^4]
+
+[^4]: Here, ${\arg \max}$ picks the smallest maximizing argument in the unlikely case of a draw.
+
+$$
+y_{nt} = {\arg \max}_{j = 1,\dots,J} U_{ntj}.
+$$
+
+## Model Formula
+
+In **Rprobit** the model is represented using a formula as in the **mlogit** R package [@Croissant:2020]. The following formula describes the dependent variable `choice` as a function of the type I variable `V1`, the type II variable `V2` and the type III variable `V3`:
+
+```{r basic-formula, eval = FALSE}
+formula <- choice ~ V1 | V2 | V3
+```
+
+Hereby the following rules apply:
+
+- `choice` must be categorical variable listing the choices taken.
+- Type III variables may be omitted.
+- Type II variables may be omitted, if type III are also omitted. Otherwise include a `0`
+- More than one variable can be included in each of the three sections using addition signs such as `V1 + V2 + V3`.
+- By default ASCs are included as type II variables. They can be excluded by adding `+ 0` such as `V2 + 0`.
+
+## Example: Choice of a New Car
+
+Consider a household deciding between different power trains for the car to be purchased. The options are a battery powered electric vehicle (BEV) and an internal combustion engine (ICE).
+
+The alternative specific variables may include:
+
+- price `price`
+- driving range `range`
+- horse power equivalent `PS`
+- expected maintenance price per year `Main`
+
+All of these depend on the alternative at the time of buying. The driving range coefficient for the BEV will be much higher than for the ICEV, as the refilling of the ICEV is simpler.
+
+The decider characteristics may include:
+
+- household income `HI`
+- household savings `HS`
+- location (urban?) `loc`
+- charging facility potential `CF`
+- attitude towards environmental issues `Attitude`
+
+The corresponding formula might be assuming that `Attitude` is not measured:
+
+```{r car-formula, eval = FALSE}
+formula <- choice ~  PS + Main | HI + HS + loc + CF + 0 | range
+```
+
+The tradeoff between the purchase price and the driving range of a car may depend on the commuting habits of the deciders that are not represented well in the data.
+
+## Identifiability
+
+When maximizing utilities the level is not of importance: Adding a constant to all utilities does not change the maximizing alternative. Also the scale is not of importance: Multiplying all utilities with a positive constant leaves the maximizing alternative indifferent. This implies identifiability issues. [@Train:2009]
+
+For type I variables the difference between two utilities $U_{ntj}-U_{ntk}$ depends on the difference $X_{ntj}-X_{ntk}$ between the regressor variables. Therefore variables that do not vary over alternatives (resulting in $X_{ntj}-X_{ntk}=0$) cannot be used as type I variables. Additionally, $\beta$ needs to be identified from $X_{ntj}'\beta$. Thus the type I variables must not be multicollinear.
+
+For each type II variable the model includes $J$ coefficients $\gamma_j, j=1,...,J$. Subtracting $S_{nt}'\gamma_1$ from all utilities eliminates the coefficients corresponding to the first alternative from the model. The remaining $(J-1) \cdot P_S$ coefficients for the type II variables are identifiable, if there are no multicollinearities between the type II variables. Here the choice of the first variable is arbitrary and any base alternative (=reference) can be chosen.
+
+For type III variables we obtain $Z_{ntj}'\delta_j - Z_{ntk}'\delta_k$ in the utility differences. It follows that here all $J \cdot P_Z$ coefficients are identified, if $Z_{ntj}$ vary over alternatives and are not multicollinear.
+
+The same issue arises for the error terms: Subtracting the error $\epsilon_{nt1}$ from all utilities does not change the maximizing alternative. Thus we can without restriction of generality assume that $\epsilon_{nt1} = 0$ (or pick any alternative as a reference alternative in this respect).
+
+Finally for the identification of the scale one may either restrict one coefficient to unity (or minus unity). Or one might restrict one variance to a particular value (typically 1 or 0.5). For details see @Train:2009 Section 5.2. Numerically fixing one coefficient to $\pm 1$ is more stable than fixing a variance.
+
+## Model Unification
+
+While the specification of type I, type II and type III variables is convenient for model specification and data storage, it is inconvenient in the estimation phase. Thus **Rprobit** uses a unified framework, recoding type II and type III variables into a set of type I variables. This is exemplified below. The choice data object (described in detail in the vignette [Data and Simulation](data_simulation.html)) provides the method `build_design` to perform the recoding according to a model formulation.
+
+### Representing Type II Variables as a Set of Type I Variables
+
+A type II variable is specific to the decider but not the alternatives. There are $J-1$ parameters corresponding to the type II variable, one for each alternative except for the base alternative. By interacting the type II variable with indicators of the $J-1$ alternatives we obtain $J-1$ variables varying over the alternatives: $X_{ntjl} = S_{nt}{\mathbb I}(l=j)$, where ${\mathbb I}$ denotes the indicator function. This renders the vector of utilities (using the first alternative as the base):
+
+$$
+\begin{pmatrix} U_{nt1} \\ U_{nt2} \\ \vdots \\ U_{ntJ} \end{pmatrix} =
+\begin{pmatrix} 0 \\ \gamma_2 S_{nt}  \\ \vdots \\ \gamma_J S_{nt} \end{pmatrix} =
+\begin{pmatrix} 0 & \dots & 0 \\ X_{nt22} & \dots & X_{nt2J} \\ \vdots & \vdots & \vdots \\ X_{ntJ2} & \dots & X_{ntJJ} \end{pmatrix} \begin{pmatrix} \gamma_2 \\ \gamma_3 \\ \vdots \\ \gamma_J \end{pmatrix}
+= X_{nt} \gamma.
+$$
+
+This transforms the scalar type II variable $S_{nt}$ in $J-1$ type I variables listed as the columns of the matrix $X_{nt}$.
+
+### Representing Type III Variables as a Set of Type I Variables
+
+The reformulation of one scalar type III variable into $J$ type I variables (listed as the diagonal of a matrix) follows a similar pattern:
+
+$$
+\begin{pmatrix} U_{nt1} \\ U_{nt2} \\ \vdots \\ U_{ntJ} \end{pmatrix} =
+\begin{pmatrix} \delta_1 Z_{nt1} \\ \delta_2 Z_{nt2} \\ \vdots \\ \delta_J Z_{ntJ} \end{pmatrix} =
+\begin{pmatrix} Z_{nt1} & 0 & \dots & 0 \\ 0 & Z_{nt2} & \ddots & \vdots \\ \vdots & \ddots & \ddots & 0 \\
+0 & \dots & 0 & Z_{ntJ} \end{pmatrix} \begin{pmatrix} \delta_1 \\ \delta_2 \\ \vdots \\ \delta_J \end{pmatrix}
+= Z_{nt} \delta.
+$$
+
+Note that contrary to type II variables, for type III variables we obtain $J$ new type I variables.
+
+## Choice Behavior Heterogeneity
+
+Note that all coefficient vectors $\beta, \gamma_j, \delta_j$ above are constant across decision makers. This assumption is too restrictive for many applications.[^5] Unobserved heterogeneity in choice behavior can be modeled by imposing a distribution on any element of $\beta, \gamma_j, \delta_j$ such that each decider can have their own preferences.
+
+[^5]: For example, the tradeoff between the purchase price and the driving range may depend on the commuting habits of the deciders that are not represented well in the data.
+
+Such models use a random coefficient setup wherein the random coefficients are assumed to be drawn independent of all regressor variables and the errors. Mathematically this implies a mixing of the implied choice probabilities (the expectation over the random terms mathematically leads to an integration). **Rprobit** currently only implements normally distributed random parameters, that can be correlated across coefficients.
+
+More precisely, in the unified model representation using only type I variables some of the components of $\beta$ can be mixed using a normal distribution for mixing. We assume that the mixed coefficients appear in the trailing part of $\beta$, that is $\beta = [\beta_f',\beta_r'], \beta_r \in {\mathbb R}^R, \beta_r \sim {\mathcal N}(b_r, \Omega), \beta_f = b_f \in {\mathbb R}^{K-R}$.
+
+It is assumed that all coefficients corresponding to one original type II or type III variables are either mixed or not mixed. Thus the mixed coefficients can be specified by providing the names of their corresponding variables. For example in the model `formula <- choice ~ V1 | V2 | V3` the coefficients to variable `V1` and `V3` are defined as mixing via
+
+```{r random-effects, eval = FALSE}
+re <- c("V1", "V3")
+```
+
+## Model Parameterization
+
+According to the unification described above we achieve model specification using only type I variables as
+
+$$
+U_{ntj} = X_{ntj}'\beta + \epsilon_{ntj}, j = 1,...,J, X_{ntj} , (\epsilon_{nt:}) \in {\mathbb R}^J, \beta  \in {\mathbb R}^K.
+$$
+
+Some of the components of $\beta$ can be mixed using a normal distribution for mixing. We assume that the mixed coefficients appear in the trailing part of $\beta$, that is $\beta = [\beta_f',\beta_r'], \beta_r \in {\mathbb R}^R, \beta_r \sim {\mathcal N}(b_r, \Omega), \beta_f = b_f \in {\mathbb R}^{K-R}$.
+
+Therefore the parameterization of the model requires parameters for the vector $b = (b_f',b_r')' \in {\mathbb R}^K$ and the two variance matrices $\Omega \in {\mathbb R}^{R \times R}$ and $\Sigma \in {\mathbb R}^{J \times J}$. The parameterization has to conform to the restriction that variance matrices are positive semidefinite. Additionally the parameterization must ascertain identifiability of the parameters.
+
+The parameter vector $b \in {\mathbb R}^{K}$ is parameterized using a linear affine mapping, to allow for the imposition of some restrictions:
+
+$$
+b = H_b \theta_b + f_b.
+$$
+
+This allows to incorporate linear equality constraints on the parameters. For instance, restricting $b_1 = 1, b_2 = 0, b_3 = - b_4$ with $b_5$ free is achieved using
+
+$$
+H_b = \begin{pmatrix} 0 & 0 \\ 0 & 0 \\ 1 & 0 \\ -1 & 0 \\ 0 & 1 \end{pmatrix}, f_b = \begin{pmatrix} 1 \\ 0 \\ 0 \\ 0 \\ 0 \end{pmatrix}.
+$$
+
+A common device to ensure positive semidefiniteness of matrices is to use Cholesky factors. For each positive semidefinite matrix $\Sigma \in {\mathbb R}^{J \times J}$ there exists a lower triangular matrix $L \in {\mathbb R}^{J \times J}$ such that $L L' = \Sigma$.
+
+We chose to parameterize the vectorization of the lower half of the Cholesky matrices using a linear affine mapping:
+
+$$
+\operatorname{vech}(L) = H_L \theta_L + f_L
+$$
+
+where $\operatorname{vech}$ denotes columnwise vectorization of the lower triangular matrix (including the diagonal). Thus for $J=3$, for example, the lower triangular Cholesky factor includes 6 entries:
+
+$$
+\begin{align*}
+L = \begin{pmatrix} \theta_1 & 0 & 0 \\ \theta_2 & \theta_4 & 0 \\ \theta_3 & \theta_5 & \theta_6 \end{pmatrix}.
+\end{align*}
+$$
+
+Here $f_L$ can be used to fix entries for identifiability reasons. For example, for $J=3$ parameterizing a diagonal matrix where the (1,1) entry is fixed to equal $\Sigma_{1,1}=1$ can be done using
+
+$$
+\begin{align*}
+H_L &= \begin{pmatrix} 0 & 0 \\ 0 & 0 \\ 0 & 0 \\ 1 & 0 \\ 0 & 0 \\ 0 & 1 \end{pmatrix},
+f_L = \begin{pmatrix} 1 \\ 0 \\ 0 \\ 0 \\ 0 \\ 0 \end{pmatrix}.
+\end{align*}
+$$
+
+Thus there are two parameters $\theta_1$ and $\theta_2$. We do not impose non-negativity of these parameters, which leads to a non-identifiability as without this restriction on the diagonal entries the Cholesky factors are not unique. The tradeoff made here is the inclusion of multiple well separated global optima in favor of being able to leave out parameter non-negativity restrictions.
+
+## Model Object
+
+**Rprobit** collects all information related to the model in a `mod` object. This object is implemented as a **R6** class. See [here](https://r-statistics.co/R6-Classes-in-R.html) for the perils of **R6** classes.
+
+The following example parameterizes a model for mode choice depending on the `price` of the alternative modes (used as a type I variable) and `time` (used as a type III variable) featuring $J = 3$ alternatives. The `ASC` are mixed using a normal distribution:
+
+```{r create-basic-model, eval = TRUE}
+formula <- choice ~ price | 1 | time
+re <- "ASC"
+m_basic <- mod$new(formula, re, alt = 3)
+```
+
+Printing the object provides an overview of the specification:
+
+```{r print-basic-model, eval = TRUE}
+print(m_basic)
+```
+
+We can see that six coefficient parameters (`length_theta_b = 6`) are free, the two ASCs are random leading to a $2 \times 2$ covariance matrix $\Omega \in {\mathbb R}^{2 \times 2}$ that is modeled as a diagonal matrix using two parameters (`length_theta_O = 2`). Finally the variance $\Sigma$ uses two parameters (`length_theta_L = 2`):
+
+$$
+\begin{align*}
+H_L &= \begin{pmatrix} 0 & 0 \\ 0 & 0 \\ 0 & 0 \\ 0 & 0 \\ 1 & 0 \\ 0 & 1 \end{pmatrix},  f_L = \begin{pmatrix} 0 \\ 0 \\ 0 \\ 1 \\ 0 \\ 0 \end{pmatrix} \Rightarrow L = \begin{pmatrix} 0 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & \theta_1 & \theta_2 \end{pmatrix} \Rightarrow \Sigma = LL' = \begin{pmatrix} 0 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & \theta_1 & \theta_1^2 + \theta_2^2 \end{pmatrix}.
+\end{align*}
+$$
+
+There are more options to initialize a `mod` object:
+
+```{r configure-model, eval = TRUE}
+alt_names <- c("train", "bus", "car")
+
+m <- mod$new(
+  formula = formula, re = re, alt = 3,
+  alt_names = alt_names,            # alternative labels
+  ref_alt = "train",                # reference alternative (for type-2 effects)
+  corr_re = FALSE,                  # structure for Omega
+  error_struc = "diag"              # structure for Sigma
+)
+
+print(m)
+```
+
+This adds labels to the alternatives and changes the error covariance matrix to a diagonal structure. For the recoding `ref_alt` defines the reference alternative, for which no ASC or type II regressors are generated to avoid non-identifiability.
+The correlation structure of $\Omega$ is set to `FALSE` leading to a diagonal matrix. The error variance matrix is chosen diagonal. The available error structures are:
+
+- `"full"`: the first Cholesky column is fixed to zero, `L[2,2]` is fixed to one, and the remaining entries are free
+- `"diag"`: the first Cholesky diagonal entry is fixed to one and the remaining diagonal entries are free
+- `"ident"`: $\Sigma$ is proportional to the identity matrix, with one shared free Cholesky diagonal parameter
+- `"fixed"`: $\Sigma$ is fixed to the identity matrix.
+
+## Working with the Model Objects
+
+Having defined objects, one wants to manipulate the models. To do this, we must know the fields of the model object. These can be grouped into fields that are read-only and fields that can be adapted.
+
+Read-only fields are:
+
+- `alt` number of alternatives
+- `b_count` vector of two integers, number of fixed and random coefficients
+- `var_names` list containing the names of fixed and random coefficients
+- `length_theta` number of free model parameters, together with `length_theta_b`, `length_theta_O`, and `length_theta_L` splitting it into the parts corresponding to $\beta, \Omega, \Sigma$.
+- `mod_list` list containing the model representation used by the numerical routines.
+
+These cannot be changed directly but are inferred from the adjustable fields:
+
+- `formula`: model formula
+- `re`: vector of variables with random coefficients
+- `alt_names`: vector of strings labeling the alternatives
+- `ref_alt` string identifying reference alternative
+- `H_b, f_b, H_O, f_O, H_L, f_L`: matrices implementing the affine linear restrictions for the various matrices.
+- `suppress_warnings`: Boolean.
+
+The last field suppresses warnings issued by the object. Changing model-defining fields such as `formula`, `re`, `alt_names`, or `ref_alt` can automatically adapt dependent restriction matrices and vectors. By default, the object warns about these adaptations.
+
+To demonstrate this behavior, consider adding a random coefficient for `price`:
+
+```{r add-random-coefficient, eval = TRUE}
+m$suppress_warnings <- TRUE
+m$re <- c("ASC", "price")
+m
+```
+
+Since `suppress_warnings` is set to `TRUE`, no warning is issued. If we set `suppress_warnings` to `FALSE` and change the model back, we get a warning:
+
+```{r reset-random-coefficient, eval = TRUE}
+m$suppress_warnings <- FALSE
+m$re <- c("ASC")
+m
+```
+
+To impose a restriction on $\beta$, we may change the matrices `H_b, f_b` directly. For example, restricting $b(1)$ to equal $b[1]=1$ we may use the following commands:
+
+```{r restrict-coefficient, eval = TRUE}
+m$H_b <- m$H_b[, -1]
+m$f_b[1] <- 1
+m
+```
+
+To check that the first element is restricted to one, we can draw a random parameter vector and calculate the system corresponding to this parameter vector:
+
+```{r build-parameter}
+set.seed(1)
+theta <- runif(m$length_theta)
+(parameter <- m$build_parameter(theta))
+```
+
+Sometimes it is useful to go the other way and calculate the parameter vector corresponding to a particular system:
+
+```{r build-theta}
+theta2 <- m$build_theta(
+  b = parameter$b,
+  Omega = parameter$Omega,
+  Sigma = parameter$Sigma
+)
+all.equal(theta, theta2)
+```
+
+This helps for example when a given variance matrix $\Sigma$ shall be parameterized.
+
+Restrictions on $\Omega$ and $\Sigma$ can be handled analogously. Note, that **Rprobit** provides much freedom with respect to choosing the parameterization of the model. The user can change the matrices and vectors in the three affine linear mappings within the dimensions implied by the model. Consequently, the user has to make sure that her parameterization is identifiable.
+[@Train:2009] discusses in section 5.2. guidelines to achieve identification. This is supported via the method `check_identifiability` which performs a numeric check by calculating the column rank of the Jacobian of a normalized representation of $b$, $\Omega$, and the differenced $\Sigma$ for a randomly chosen parameter vector $\theta$.
+
+If in the example above, for example, we change the parameterization back to estimate all entries in $\beta$ and to also include the $(2,2)$-element of $L$ as a free parameter, then the model loses its identifiability due to a lack of identifying the scale of the utility. Some problems with identifiability can be checked using the `check_identifiability()` function. The first model is identifiable...
+
+```{r check-identifiable-model, eval = TRUE}
+m$H_b <- diag(6)
+m$check_identifiability()
+```
+
+... while the second is not:
+
+```{r check-unidentifiable-model, eval = TRUE, warning = TRUE}
+m2 <- m$clone()
+m2$H_L <- diag(6)[, -c(1, 2, 3)]
+m2$f_L <- matrix(0, ncol = 1, nrow = 6)
+m2$check_identifiability()
+```
+
+Note, that instead of just assigning `m` to the second model `m2` we need to `clone()` the object. **R6** objects have reference semantics, so a direct assignment would refer to the same object. Cloning creates an independent object.
+
+## References

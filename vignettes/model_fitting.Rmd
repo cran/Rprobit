@@ -1,0 +1,224 @@
+---
+title: "Model Fitting"
+output:
+  rmarkdown::html_vignette:
+    math_method: r-katex
+bibliography: references.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{Model Fitting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r global-options, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE
+)
+```
+
+```{r setup, echo = FALSE}
+library(Rprobit)
+```
+
+**Rprobit** implements a number of different estimation procedures based on the minimization of a number of different criterion functions:
+
+1. The full probit negative log likelihood
+2. Different versions of composite marginal likelihood (CML) based on choice probabilities for pairs of choices.
+
+Here the likelihood for the multinomial probit (MNP) model is obtained in the following way: It is assumed that the observations for different individuals are independent. Thus the log likelihood is the sum of the log likelihood contributions of the individual deciders. For each decider the choice taken in the $t$-th decision is given by the random utility formulation as
+
+$$
+\begin{array}{lll}
+U_{ntj}  & = & V_{ntj} + e_{ntj}, n = 1,...,N, t=1,...,T, j=1,...,J, \\
+V_{ntj} & = & X_{ntj}' \beta + Z_{ntj}'\gamma, \gamma \sim {\mathcal N}(0, \Omega), \\
+e_{nt} & =& \begin{pmatrix} e_{nt1} \\ \vdots \\ e_{ntJ}
+\end{pmatrix} \sim {\mathcal N}(0,\Sigma)
+\end{array}
+$$
+
+Details on the formulation of the model can be found in the vignette [Model Definition](model_definition.html).
+
+Given this model the probability that decider $n$ in her $t$-th choice occasion chooses alternative $j$ equals the probability
+
+$$
+{\mathbb P}(y_{nt} = j) = {\mathbb P}(U_{ntk} \le U_{ntj} \forall k) = {\mathbb P}( U_{ntk}-U_{ntj} \le 0 \forall k) =  {\mathbb P}( e_{ntk}-e_{ntj} \le V_{ntj}-V_{ntk}  \forall k).
+$$
+Since $e_{ntk}$ are multivariate normally distributed, the choice probability is obtained by evaluating the Gaussian CDF.
+
+In a panel situation, where more than one choice occasion per decider is recorded, the different choices may be conditionally (on the regressors) independent. If $\Omega>0$ such that there are random coefficients, the choices are linked. Consequently the
+choice occasions need to be modeled jointly. The
+probability of the joint vector of $T$ choices then obtains as
+
+$$
+{\mathbb P}(y_{nt} = j, t=1,...,T) = {\mathbb P}( e_{ntk}-e_{ntj} \le V_{ntj}-V_{ntk} , k=1,...,J , t=1,...,T, k\ne j).
+$$
+
+For $T$ choice occasions with $J$ choices each then a
+$T(J-1)$ dimensional Gaussian CDF needs to be evaluated. This evaluation is numerically costly.
+
+Therefore analytic approximations of the Gaussian CDF, which is used extensively in all criterion functions, as well as the corresponding gradients, are used. The package implements the Solow-Joe (SJ, @Solow:1990) approach. The approximations
+reduce the numerical load as compared to the usual evaluation of the Gaussian CDF. For results on the properties of the estimates using different approximations see [@Batram:2019].
+
+The full probit likelihood evaluates the choice probabilities for all choice occasions of a decider jointly.
+If no mixed coefficients are present then the joint probability is the product of the marginal probabilities and the CML approaches and the full likelihood are identical (for appropriate weighting in the case of unbalanced panels).
+
+Randomly mixed coefficients, however, introduce correlation between the choices such that the evaluation of the joint probability requires an evaluation of a potentially high dimensional normally distributed random variable. Numerically this is costly.
+
+The CML alleviates these problems by replacing the full likelihood with easier to calculate criterion functions, see [@Varin:2005; @Varin:2006]. The most often used form is the so called pairwise likelihood which is based on representing pairs of choices in the criterion function. When picking one pair of observations from each decider leads to a criterion function with the usual properties for the reduced data set. As this is so for every choice of the pair, the same holds for a sum of such pairwise likelihoods.
+
+## Types of CML
+
+Using pairwise CMLs leads to a criterion function that trades off numerical load with statistical efficiency. The pairwise probabilities are faster to calculate, but there is no guarantee that the CML based approach achieves the Cramer Rao lower bound. In the literature it is shown using simulations that in some cases the price in terms of asymptotic variance is small while the computational gain is large (cf. @Bhat:2011).
+
+Depending on which pairs are chosen, the tradeoff between numerical speed and variance is different. The standard choices are:
+
+1. `cml_type = "FP"`: full pairwise, includes all pairs of choices.
+2. `cml_type = "AC"`: adjacent pairwise chained. This uses all adjacent pairs plus the pair of the first and the last choice. This structure is aimed at cyclical situations such as surveys over all weekdays, such that Sunday and Monday are adjacent days.
+3. `cml_type = "AP"`: adjacent pairwise.
+
+## Optimization Parameters
+
+The optimization uses the R function `nlm` for the numerical search. This function contains many input arguments that
+can be specified also for the fit function of **Rprobit**. Amongst the most prominent of those is the argument `print.level` which controls the output presented in the screen. The most often used arguments are `print.level = 0` (no output) and `print.level = 2` (output per iteration).
+
+## Initial Estimates
+
+The numerical search needs to be started at an initial estimate. A numeric parameter vector can be supplied through `theta_init`, which is useful for simulated data sets where the true underlying parameter vector is known. If `theta_init = NULL`, **Rprobit** applies its initialization procedure.
+
+In **Rprobit** a strategy is used, that is described in [@Oelschlaeger:2026]: The fast initialization method uses the structure of
+the problem to obtain a rough guess, which can be shown to be consistent for the true parameter vector under appropriate
+assumptions. Simulations in [@Oelschlaeger:2026] document that the approach leads to numerical gains compared to random initialization.
+
+## Example
+
+Conversion of the Train data set [@Croissant:2020] into a `Rprobit` object is described in the vignette [Data and Simulation](data_simulation.html). The model can be set up as described in detail in [Modeling Setup](modeling_setup.html).
+
+```{r create-train-model}
+data("Train", package = "mlogit")
+
+train_model <- setup(
+  formula = choice ~ price + time + change | 0 | comfort,
+  df = Train,
+  re = c("time"),
+  column_decider_id = "id",
+  column_occasion_id = "choiceid"
+)
+train_model$mod$H_b <- train_model$mod$H_b[, -1]
+train_model$mod$f_b[1] <- -0.001
+train_model$mod$H_L <- matrix(c(0, 0, 1), ncol = 1)
+train_model$mod$f_L <- c(0, 0, 0)
+
+print(train_model)
+```
+
+Having set up the model we may estimate it using the method `fit` for the **R6** object:
+
+```{r fit-probit-model}
+start_time <- Sys.time()
+train_model$fit(cml_type = "probit")
+end_time <- Sys.time()
+elapsed_time <- end_time - start_time
+```
+
+```{r inspect-probit-time}
+elapsed_time
+```
+
+The initialization procedure finds initial values that are already close to the optimum:
+
+```{r compare-fit-init}
+rbind(
+  "init" = train_model$theta_init,
+  "fit" = train_model$theta_fit
+) |> round(2)
+```
+
+The properties of the estimated model are stored in the object and can be printed:
+
+```{r inspect-probit-fit}
+summary(train_model)
+```
+
+```{r inspect-probit-coefficients}
+coef(train_model)
+```
+
+```{r inspect-probit-confidence}
+confint(train_model)
+```
+
+```{r inspect-probit-vcov}
+vcov(train_model)
+```
+
+A different criterion function can be used for estimation:
+
+```{r fit-ap-model}
+start_time <- Sys.time()
+train_2 <- fit(train_model, theta_init = NULL, print.level = 0, cml_type = "AP")
+end_time <- Sys.time()
+elapsed_time2 <- end_time - start_time
+```
+
+```{r inspect-ap-time}
+elapsed_time2
+```
+
+```{r inspect-ap-fit}
+summary(train_2)
+```
+
+The AP criterion is much faster in this example. Because the two fits optimize different criterion functions, their criterion values are not directly comparable.
+
+```{r compare-fits}
+c(logLik(train_model), logLik(train_2))
+```
+
+Their estimated standard errors can be compared as follows:
+
+```{r compare-fit-errors}
+V_probit <- vcov(train_model)
+V_ap <- vcov(train_2)
+
+cbind(sqrt(diag(V_probit)), sqrt(diag(V_ap)))
+```
+
+### Model Diagnostics
+
+Beside the fitted model also the predictions of the choice probabilities as well as residuals are of interest. These can be obtained as follows:
+
+```{r model-diagnostics}
+res <- residuals(train_model)
+apply(res, 2, mean)
+```
+
+```{r plot-diagnostics, fig.align = "center", fig.width = 7, fig.height = 5}
+probs <- predict(train_model)
+plot(probs[, 1], res[, 1], xlab = "Choice probabilities", ylab = "Residuals")
+```
+
+The plot shows that the residuals are given as the choices minus the choice probabilities.
+
+Additionally predicted choice probabilities can also be obtained for a new data set:
+
+```{r predict-new-data}
+prediction_df <- Train[1:6, ]
+prediction_df[, "price_A"] <- 3000
+prediction_df[, "time_A"] <- 120
+prediction_df[, "choice"] <- NA
+prediction_data <- choice_data$new(
+  df = prediction_df,
+  column_decider_id = "id"
+)
+new_probabilities <- predict(
+  train_model,
+  newdata = prediction_data,
+  type = "probabilities"
+)
+new_probabilities
+```
+
+## References

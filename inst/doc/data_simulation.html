@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8">
+<meta name="generator" content="pandoc">
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+<title>Data and Simulation</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" data-external="1"></head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Data and Simulation</h1>
+
+
+
+<p>In this document the data structures used in <strong>Rprobit</strong>
+are presented. Tools to work with the data are described. Subsequently,
+simulation of data sets is useful in a number of settings.
+<strong>Rprobit</strong> offers support for this, as will be discussed
+at the end of this vignette.</p>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>Choice models are built to help explain the tradeoffs behind choices.
+Oftentimes the data for fitting the models comes in the form of a panel,
+providing a number of choices of a number of different deciders. The
+tradeoffs weigh the various alternatives according to corresponding
+characteristics. Beside the alternatives also the deciders often are
+characterized by different variables. Hence the choice data sets
+typically contain the following objects:</p>
+<ul>
+<li>dependent variable: categorical, one out of a finite set of
+alternatives</li>
+<li>characteristics of the alternatives</li>
+<li>characteristics of the deciders</li>
+<li>context information: id of the decider, ids of the alternatives</li>
+</ul>
+<p>Therefore, choice data contains more information than typically
+stored inside a <code>data.frame</code> object.</p>
+<div id="example-mode-choice" class="section level3">
+<h3>Example: Mode Choice</h3>
+<p>A prime example for multinomial choice data is contained in the
+package <strong>mlogit</strong> <span class="citation">(<a href="#ref-Croissant:2020">Croissant 2020</a>)</span>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(mlogit)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;ModeCanada&quot;</span>, <span class="at">package =</span> <span class="st">&quot;mlogit&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">head</span>(ModeCanada)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 &#xD7; 11</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt;    case alt   choice  dist  cost   ivt   ovt  freq income urban noalt</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;fct&gt;  &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt; 1     1 train      0    83  28.2    50    66     4     45     0     2</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; 2     1 car        1    83  15.8    61     0     0     45     0     2</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; 3     2 train      0    83  28.2    50    66     4     25     0     2</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; 4     2 car        1    83  15.8    61     0     0     25     0     2</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt; 5     3 train      0    83  28.2    50    66     4     70     0     2</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; 6     3 car        1    83  15.8    61     0     0     70     0     2</span></span></code></pre></div>
+<p>The data describes the choice between the four alternatives &#x2018;train&#x2019;,
+&#x2018;air&#x2019;, &#x2018;bus&#x2019; and &#x2018;car&#x2019; for trips in Canada between Montreal and Toronto
+(see <span class="citation">(<a href="#ref-Croissant:2020">Croissant
+2020</a>)</span> for more detail). The data object contains 4324 cases,
+treated here as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>4324</mn></mrow><annotation encoding="application/x-tex">N=4324</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4324</span></span></span></span> deciders with
+<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">T=1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> choice occasions. The data consists
+in revealed preference survey data, wherein deciders were asked about
+their decision between the alternatives.</p>
+<p>The choice set must conform to certain restrictions, see <span class="citation">(<a href="#ref-Train:2009">Train 2009</a>)</span>:</p>
+<ul>
+<li>mutually exclusive: choosing one alternative must mean not choosing
+a different one</li>
+<li>exhaustive: the deciders need to choose one of the alternatives;
+&#x2018;none of the above&#x2019; may be one alternative</li>
+<li>finite: the choice set must consist of a finite number of choices,
+else other model classes are more appropriate.</li>
+</ul>
+<p>The alternatives differ in terms of their characteristics:</p>
+<ul>
+<li><code>cost</code>: monetary costs</li>
+<li><code>ivt</code>: in vehicle time,</li>
+<li><code>ovt</code>: out vehicle time,</li>
+<li><code>frequency</code>: frequency of service (with 0 for cars)</li>
+</ul>
+<p>The deciders are characterized by the following variables:</p>
+<ul>
+<li><code>income</code></li>
+<li><code>urban</code>: indicator of living place</li>
+</ul>
+<p>The remaining variables provide the context. The data set is arranged
+in <em>long</em> format, wherein for each decision a number of rows in
+the <code>data.frame</code> is used. For each alternative one row is
+contained. The number of alternatives per decision need not be identical
+(some individuals may not own a car, eliminating this alternative). The
+context is described using the variables:</p>
+<ul>
+<li><code>case</code>: identifying the choice occasion (multiple lines
+can carry the same case id)</li>
+<li><code>alt</code>: the alternative to which the row corresponds;
+typically a string, could be an integer</li>
+<li><code>choice</code>: Boolean, indicating whether this alternative
+was chosen</li>
+<li><code>noalt</code>: integer, counting the number of alternatives
+contained in this choice.</li>
+</ul>
+<p>Data can also be stored in <em>wide</em> format, where for each
+decision one row in the <code>data.frame</code> is used. In this case,
+variables that vary over alternatives are coded in different columns
+indicated with trailing <code>_car</code>, <code>_train</code> etc. to
+indicate, which alternative the column corresponds to. Variable
+characterizing the deciders do not contain trailing indicators.</p>
+<p>It follows that the choice data contains more structure than is
+contained in a <code>data.frame</code>.</p>
+</div>
+<div id="the-choice_data-object" class="section level3">
+<h3>The <code>choice_data</code> Object</h3>
+<p>In <strong>Rprobit</strong> data is stored in an object
+<code>choice_data</code>. We decided to use <strong>R6</strong> classes
+for <code>choice_data</code>. See <a href="https://r-statistics.co/R6-Classes-in-R.html">here</a> for the
+perils of <strong>R6</strong> classes.</p>
+<p>These objects allow for the verification of the properties as well as
+a neat representation of the data set. Generating choice data sets based
+on <code>data.frame</code> objects in <em>long</em> format can be done
+as follows:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>d_mode <span class="ot">&lt;-</span> choice_data<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">df =</span> ModeCanada,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;long&quot;</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">column_decider_id =</span> <span class="st">&quot;case&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">column_alternative =</span> <span class="st">&quot;alt&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">print</span>(d_mode)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; &lt;choice_data object&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Data format: long</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Deciders: 4324</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Choice occasions: from 1 to 1</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Alternatives: train, car, bus, air</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Alternative-constant covariates: dist, income, urban, noalt</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; Alternative-varying covariates: cost, ivt, ovt, freq</span></span></code></pre></div>
+<p>Note, that the output also lists which variables vary over
+alternatives and which do not. This is important information for
+modeling, see the section on <a href="model_definition.html">Model
+Definition</a>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">head</span>(d_mode<span class="sc">$</span>df, <span class="dv">8</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt;       case   alt choice dist  cost ivt ovt freq income urban noalt occasion</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; 1        1 train      0   83 28.25  50  66    4     45     0     2        1</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; 2        1   car      1   83 15.77  61   0    0     45     0     2        1</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; 15521    1   bus      0   NA    NA  NA  NA   NA     NA    NA    NA        1</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; 15522    1   air      0   NA    NA  NA  NA   NA     NA    NA    NA        1</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; 3        2 train      0   83 28.25  50  66    4     25     0     2        1</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; 4        2   car      1   83 15.77  61   0    0     25     0     2        1</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; 15523    2   bus      0   NA    NA  NA  NA   NA     NA    NA    NA        1</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 15524    2   air      0   NA    NA  NA  NA   NA     NA    NA    NA        1</span></span></code></pre></div>
+<p>If the <em>long</em> data set does not contain information on all
+alternatives for all choices, they are added when the
+<code>choice_data</code> object is created (Caution, this may take a
+while for larger data sets, as the procedure loops over the
+decisions).</p>
+<p>Printing the object shows that the data object contains more
+information than the <code>data.frame</code>. The class has the
+following fields (all are read-only):</p>
+<ul>
+<li><code>N</code>: number of deciders</li>
+<li><code>Tp</code>: vector of choice occasions per decider</li>
+<li><code>df</code>: <code>data.frame</code> holding the data</li>
+<li><code>format</code>: <code>&quot;long&quot;</code> or <code>&quot;wide&quot;</code></li>
+<li><code>alt_names</code>: vector of names of alternatives</li>
+<li><code>choice_counts</code>: table of counts</li>
+<li><code>choice_frequencies</code>: table of frequencies of
+choices</li>
+<li><code>theta_dgp</code>: relevant for simulation, see below.</li>
+</ul>
+<p>These are all accessible from the object. For example, the choice
+counts and the corresponding frequencies are stored in the object:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>d_mode<span class="sc">$</span>choice_counts</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; train   car   bus   air </span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;   623  2213    16  1472</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>d_mode<span class="sc">$</span>choice_frequencies</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt;       train         car         bus         air </span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; 0.144079556 0.511794635 0.003700278 0.340425532</span></span></code></pre></div>
+</div>
+<div id="example-2-a-wide-data-set" class="section level3">
+<h3>Example 2: A <em>Wide</em> Data Set</h3>
+<p>A second example data set concerns the choice between two different
+trips in the Netherlands, see also <span class="citation">(<a href="#ref-Croissant:2020">Croissant 2020</a>)</span>. In a stated
+choice experiment, deciders have been asked to choose between two routes
+within the Dutch public transport system. The two alternatives &#x2018;A&#x2019; and
+&#x2018;B&#x2019; given are characterized via the following variables:</p>
+<ul>
+<li><code>price</code>: in Dutch guilders</li>
+<li><code>time</code>: travel time in minutes</li>
+<li><code>change</code>: integer value indicating the number of times,
+the train needs to be changed</li>
+<li><code>comfort</code>: category of comfort.</li>
+</ul>
+<p>The data set is in <em>wide</em> format. Each row corresponds to one
+choice. The values of the variables for different alternatives are
+provided using a trailing <code>_A</code> or <code>_B</code> for the
+variable labels.</p>
+<p>The data set can be imported into our data structure as for the
+<em>long</em> case:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Train&quot;</span>, <span class="at">package =</span> <span class="st">&quot;mlogit&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">head</span>(Train)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;   choiceid id choice price_A price_B time_A time_B change_A change_B comfort_A</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 1        1  1      A    2400    4000    150    150        0        0         1</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 2        2  1      A    2400    3200    150    130        0        0         1</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 3        3  1      A    2400    4000    115    115        0        0         1</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; 4        4  1      B    4000    3200    130    150        0        0         1</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; 5        5  1      B    2400    3200    150    150        0        0         1</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 6        6  1      B    4000    2400    115    130        0        0         0</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;   comfort_B</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; 1         1</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; 2         1</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 3         0</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; 4         0</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; 5         0</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; 6         0</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>d_train <span class="ot">&lt;-</span> choice_data<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">df =</span> Train,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">column_decider_id =</span> <span class="st">&quot;id&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">column_occasion_id =</span> <span class="st">&quot;choiceid&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">print</span>(d_train)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; &lt;choice_data object&gt;</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; Data format: wide</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; Deciders: 235</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; Choice occasions: from 5 to 19</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; Alternatives: A, B</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; Alternative-constant covariates: none</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; Alternative-varying covariates: price, time, change, comfort</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">head</span>(d_train<span class="sc">$</span>df, <span class="dv">6</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt;   choiceid id choice price_A price_B time_A time_B change_A change_B comfort_A</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; 1        1  1      A    2400    4000    150    150        0        0         1</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; 2        2  1      A    2400    3200    150    130        0        0         1</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; 3        3  1      A    2400    4000    115    115        0        0         1</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 4        4  1      B    4000    3200    130    150        0        0         1</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; 5        5  1      B    2400    3200    150    150        0        0         1</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 6        6  1      B    4000    2400    115    130        0        0         0</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;   comfort_B</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 1         1</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 2         1</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; 3         0</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 4         0</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; 5         0</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; 6         0</span></span></code></pre></div>
+<p>The data is kept in the <em>wide</em> format.</p>
+</div>
+<div id="linking-data-with-a-model" class="section level3">
+<h3>Linking Data with a Model</h3>
+<p>Raw data sets as given above are the basis for modeling. Oftentimes
+one collects data sets with more variables than are finally used in the
+model. Also transformations of variables (such as interaction terms,
+quadratic terms or indicator variables derived from variables) are
+frequently applied.</p>
+<p>Other recoding takes place in the modeling. To this end
+<strong>mlogit</strong> uses a three-part formula to define models,
+categorizing the regressors into type I to type III, see the vignette on
+<a href="model_definition.html">Model Definition</a> for details.
+Internally <strong>Rprobit</strong> recodes the variables to convert all
+variables into type I variables taking identifiability restrictions into
+account.</p>
+<p>One data set can be linked to a number of different models.
+<strong>Rprobit</strong> provides methods to calculate the design matrix
+for a given data set corresponding to a particular model:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>m_mode <span class="ot">&lt;-</span> mod<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">formula =</span> choice <span class="sc">~</span> cost <span class="sc">+</span> ivt <span class="sc">|</span> income <span class="sc">|</span> <span class="dv">0</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">alt =</span> <span class="fu">length</span>(d_mode<span class="sc">$</span>alt_names),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">alt_names =</span> d_mode<span class="sc">$</span>alt_names,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">ref_alt =</span> d_mode<span class="sc">$</span>alt_names[<span class="dv">1</span>]</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>design_mode <span class="ot">&lt;-</span> d_mode<span class="sc">$</span><span class="fu">build_design</span>(m_mode)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>design_mode[[<span class="dv">1</span>]]<span class="sc">$</span>X[[<span class="dv">1</span>]]</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;        cost ivt income_car income_bus income_air ASC_car ASC_bus ASC_air</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; train 28.25  50          0          0          0       0       0       0</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; car   15.77  61         45          0          0       1       0       0</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; bus      NA  NA          0         45          0       0       1       0</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; air      NA  NA          0          0         45       0       0       1</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>m_mode2 <span class="ot">&lt;-</span> mod<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">formula =</span> choice <span class="sc">~</span> cost <span class="sc">|</span> income <span class="sc">|</span> ivt,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">alt =</span> <span class="fu">length</span>(d_mode<span class="sc">$</span>alt_names),</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">alt_names =</span> d_mode<span class="sc">$</span>alt_names,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">ref_alt =</span> d_mode<span class="sc">$</span>alt_names[<span class="dv">1</span>]</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>design_mode <span class="ot">&lt;-</span> d_mode<span class="sc">$</span><span class="fu">build_design</span>(m_mode2)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>design_mode[[<span class="dv">1</span>]]<span class="sc">$</span>X[[<span class="dv">1</span>]]</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;        cost income_car income_bus income_air ASC_car ASC_bus ASC_air ivt_train</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; train 28.25          0          0          0       0       0       0        50</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; car   15.77         45          0          0       1       0       0         0</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; bus      NA          0         45          0       0       1       0         0</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; air      NA          0          0         45       0       0       1         0</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;       ivt_car ivt_bus ivt_air</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; train       0       0       0</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; car        61       0       0</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; bus         0      NA       0</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; air         0       0      NA</span></span></code></pre></div>
+<p>For the estimation (see details in <a href="model_fitting.html">Model
+Fitting</a>) it is numerically advantageous to calculate the differences
+with respect to the chosen alternative:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>design_mode <span class="ot">&lt;-</span> d_mode<span class="sc">$</span><span class="fu">build_design</span>(m_mode, <span class="at">difference =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>design_mode[[<span class="dv">1</span>]]<span class="sc">$</span>X[[<span class="dv">1</span>]]</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;              cost ivt income_car income_bus income_air ASC_car ASC_bus ASC_air</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; train - car 12.48 -11        -45          0          0      -1       0       0</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; bus - car      NA  NA        -45         45          0      -1       1       0</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; air - car      NA  NA        -45          0         45      -1       0       1</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>design_mode <span class="ot">&lt;-</span> d_mode<span class="sc">$</span><span class="fu">build_design</span>(m_mode2, <span class="at">difference =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>design_mode[[<span class="dv">1</span>]]<span class="sc">$</span>X[[<span class="dv">1</span>]]</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt;              cost income_car income_bus income_air ASC_car ASC_bus ASC_air</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; train - car 12.48        -45          0          0      -1       0       0</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; bus - car      NA        -45         45          0      -1       1       0</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; air - car      NA        -45          0         45      -1       0       1</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;             ivt_train ivt_car ivt_bus ivt_air</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; train - car        50     -61       0       0</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; bus - car           0     -61      NA       0</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; air - car           0     -61       0      NA</span></span></code></pre></div>
+</div>
+</div>
+<div id="simulation" class="section level2">
+<h2>Simulation</h2>
+<p>In research data sets often are obtained by simulation. Reasons for
+this may be:</p>
+<ul>
+<li>investigation of a new method for estimating</li>
+<li>demonstration of a method</li>
+<li>generating data for bootstrapping</li>
+<li>indirect inference methods</li>
+</ul>
+<p><strong>Rprobit</strong> provides a limited support for simulation.
+It is our experience that most simulations are very problem specific,
+making it easier to program the simulation individually rather than
+including this functionality into the package. Nevertheless, there are a
+number of situations, where <strong>Rprobit</strong> can be of help.</p>
+<div id="simulating-a-full-data-set-including-the-characteristics" class="section level3">
+<h3>Simulating a Full Data Set Including the Characteristics</h3>
+<p>For investigation of a new method or demonstration purposes we may
+simulate data sets of given characteristics including a random choice of
+the characteristics. In <strong>Rprobit</strong> this can be done by
+specifying:</p>
+<ul>
+<li>the model using the <code>mod</code> object</li>
+<li>optionally, a parameter vector</li>
+<li>a data structure providing the context such as the number of
+deciders and the numbers of choice occasions per decider.</li>
+</ul>
+<p>These objects may be defined in a sequence such as the following (for
+details on the definition of the model see the vignette <a href="model_definition.html">Model Definition</a>):</p>
+<ul>
+<li>first a model is defined for the choice between &#x2018;car&#x2019; and &#x2018;bus&#x2019;. It
+features two type I variables <code>quality</code> and
+<code>price</code>; one type II variable <code>income</code>; and one
+type III variable <code>time</code>. The dependent variable is called
+<code>choice</code>. The coefficient for <code>quality</code> is
+random.</li>
+<li>the type I and III variables vary over alternatives,
+<code>income</code> only over deciders</li>
+<li><code>d_sim</code> sets up the object empty</li>
+<li><code>theta</code> contains the parameters. If it is not supplied, a
+parameter vector is drawn from independent standard normal
+variables.</li>
+<li>applying the method <code>simulate()</code> generates the data: Here
+<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">N=3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span> deciders with <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo separator="true">,</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">1,2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3</mn></mrow><annotation encoding="application/x-tex">3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span>
+choice occasions respectively are simulated. The covariates are drawn
+independently from centered normal distributions with standard deviation
+specified as <code>sd = 2</code>.</li>
+</ul>
+<p>The corresponding simulated data set is returned as a
+<code>data.frame</code>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>m_sim <span class="ot">&lt;-</span> mod<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">formula =</span> choice <span class="sc">~</span> quality <span class="sc">+</span> price <span class="sc">|</span> income <span class="sc">|</span> time,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">re =</span> <span class="st">&quot;quality&quot;</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">alt =</span> <span class="dv">2</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">alt_names =</span> <span class="fu">c</span>(<span class="st">&quot;bus&quot;</span>, <span class="st">&quot;car&quot;</span>),</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">ref_alt =</span> <span class="st">&quot;bus&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>)</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>d_sim <span class="ot">&lt;-</span> choice_data<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>theta <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(m_sim<span class="sc">$</span>length_theta)</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>theta[<span class="dv">1</span><span class="dt">L</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span> <span class="co"># negative price coefficient</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>simulated <span class="ot">&lt;-</span> d_sim<span class="sc">$</span><span class="fu">simulate</span>(</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  <span class="at">mod =</span> m_sim,</span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  <span class="at">theta =</span> theta,</span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>  <span class="at">N =</span> <span class="dv">3</span>,</span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>  <span class="at">Tp =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>),</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>  <span class="at">sd =</span> <span class="dv">2</span> <span class="co"># standard deviation of centered normal distribution for covariates</span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>)</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="fu">head</span>(simulated, <span class="dv">6</span>)</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="co">#&gt;   id occasion choice quality_bus quality_car price_bus  price_car     income</span></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co">#&gt; 1  1        1    car   1.4766494 -4.42939977  1.187803 -0.1122575 -0.2055755</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="co">#&gt; 2  2        1    bus   1.1515627  2.24986184  1.837955 -0.3115910  0.7753432</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a><span class="co">#&gt; 3  2        2    car  -0.6107768 -0.08986722  1.564273 -2.9415048 -0.1076101</span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a><span class="co">#&gt; 4  3        1    car   3.0235623 -0.03238053  0.149130 -0.9563001 -2.7541191</span></span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a><span class="co">#&gt; 5  3        2    bus   0.7796865  1.88767242 -3.978703  0.8358831 -0.8299891</span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a><span class="co">#&gt; 6  3        3    bus  -1.2424812  1.64244239  1.239651  2.7173591 -0.7885799</span></span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a><span class="co">#&gt;     time_bus   time_car</span></span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a><span class="co">#&gt; 1 -0.1186268  1.1133264</span></span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a><span class="co">#&gt; 2  2.2000507 -1.3775114</span></span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a><span class="co">#&gt; 3  1.5263515 -1.4149903</span></span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a><span class="co">#&gt; 4 -0.3290472  0.7291639</span></span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="co">#&gt; 5 -0.5067234  1.5370658</span></span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a><span class="co">#&gt; 6  1.3939268 -0.2246924</span></span></code></pre></div>
+<p>Additionally it is also stored in the object <code>d_sim</code> due
+to the <strong>R6</strong> functionality.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">head</span>(d_sim<span class="sc">$</span>df, <span class="dv">6</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt;   id occasion choice quality_bus quality_car price_bus  price_car     income</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; 1  1        1    car   1.4766494 -4.42939977  1.187803 -0.1122575 -0.2055755</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; 2  2        1    bus   1.1515627  2.24986184  1.837955 -0.3115910  0.7753432</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; 3  2        2    car  -0.6107768 -0.08986722  1.564273 -2.9415048 -0.1076101</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; 4  3        1    car   3.0235623 -0.03238053  0.149130 -0.9563001 -2.7541191</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; 5  3        2    bus   0.7796865  1.88767242 -3.978703  0.8358831 -0.8299891</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; 6  3        3    bus  -1.2424812  1.64244239  1.239651  2.7173591 -0.7885799</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt;     time_bus   time_car</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; 1 -0.1186268  1.1133264</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; 2  2.2000507 -1.3775114</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt; 3  1.5263515 -1.4149903</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; 4 -0.3290472  0.7291639</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt; 5 -0.5067234  1.5370658</span></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; 6  1.3939268 -0.2246924</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>d_sim<span class="sc">$</span>choice_counts</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; bus car </span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt;   3   3</span></span></code></pre></div>
+<p>In order to memorize the data generating process, <code>d_sim</code>
+also stores the parameter vector used for simulation (but not the
+model).</p>
+</div>
+<div id="redrawing-choices" class="section level3">
+<h3>Redrawing Choices</h3>
+<p>Using independent normally drawn characteristics may not be wanted.
+Also in bootstrapping applications one may want to simulate different
+choices being taken for the same model. <strong>Rprobit</strong>
+supports this by implementing a method to redraw choice given the choice
+data. Therein the characteristics and the context is left identical,
+only the choices are simulated newly based on the corresponding choice
+probabilities.</p>
+<p>To demonstrate this feature, consider the following procedure:</p>
+<ul>
+<li>the <code>data.frame</code> is manipulated by subtracting <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>5</mn></mrow><annotation encoding="application/x-tex">5</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span> for the <code>price</code> of the &#x2018;bus&#x2019;
+alternative.</li>
+<li>then the method <code>redraw_choices</code> is applied to obtain the
+new choices</li>
+<li>note that the choices may now differ, while the characteristics only
+change for the <code>price</code> of bus.</li>
+</ul>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>modified <span class="ot">&lt;-</span> simulated</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>modified<span class="sc">$</span>price_bus <span class="ot">&lt;-</span> modified<span class="sc">$</span>price_bus <span class="sc">-</span> <span class="dv">5</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>redrawn <span class="ot">&lt;-</span> d_sim<span class="sc">$</span><span class="fu">redraw_choices</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">df =</span> modified,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">mod =</span> m_sim,</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  <span class="at">column_decider_id =</span> <span class="st">&quot;id&quot;</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>)</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="fu">head</span>(redrawn)</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt;   id occasion choice quality_bus quality_car price_bus  price_car     income</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt; 1  1        1    car   1.4766494 -4.42939977 -3.812197 -0.1122575 -0.2055755</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt; 2  2        1    bus   1.1515627  2.24986184 -3.162045 -0.3115910  0.7753432</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt; 3  2        2    bus  -0.6107768 -0.08986722 -3.435727 -2.9415048 -0.1076101</span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; 4  3        1    bus   3.0235623 -0.03238053 -4.850870 -0.9563001 -2.7541191</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co">#&gt; 5  3        2    bus   0.7796865  1.88767242 -8.978703  0.8358831 -0.8299891</span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; 6  3        3    bus  -1.2424812  1.64244239 -3.760349  2.7173591 -0.7885799</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt;     time_bus   time_car</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; 1 -0.1186268  1.1133264</span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; 2  2.2000507 -1.3775114</span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt; 3  1.5263515 -1.4149903</span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt; 4 -0.3290472  0.7291639</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co">#&gt; 5 -0.5067234  1.5370658</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt; 6  1.3939268 -0.2246924</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>d_sim<span class="sc">$</span>choice_counts</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; bus car </span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt;   5   1</span></span></code></pre></div>
+<p>In this way, we may obtain many different draws to use them in a
+bootstrapping procedure.</p>
+</div>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Croissant:2020" class="csl-entry">
+Croissant, Y. 2020. <span>&#x201C;Estimation of Random Utility Models in
+<span>R</span>: The <span class="nocase">mlogit</span> Package.&#x201D;</span>
+<em>Journal of Statistical Software</em> 95 (11). <a href="https://doi.org/10.18637/jss.v095.i11">https://doi.org/10.18637/jss.v095.i11</a>.
+</div>
+<div id="ref-Train:2009" class="csl-entry">
+Train, K. 2009. <em>Discrete Choice Methods with Simulation</em>.
+Cambridge University Press. <a href="https://doi.org/10.1017/CBO9780511805271">https://doi.org/10.1017/CBO9780511805271</a>.
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+
+</body>
+</html>
+

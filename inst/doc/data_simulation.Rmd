@@ -1,0 +1,310 @@
+---
+title: "Data and Simulation"
+output:
+  rmarkdown::html_vignette:
+    math_method: r-katex
+bibliography: references.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{Data and Simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r global-options, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE
+)
+```
+
+```{r setup, echo = FALSE}
+library(Rprobit)
+```
+
+In this document the data structures used in **Rprobit** are presented. Tools to work with the data are described. Subsequently, simulation of data sets is useful in a number of settings. **Rprobit** offers support for this, as will be discussed at the end of this vignette.
+
+## Data
+
+Choice models are built to help explain the tradeoffs behind choices. Oftentimes the data for fitting the models comes in the form of a panel, providing a number of choices of a number of different deciders. The tradeoffs weigh the various alternatives according to corresponding characteristics. Beside the alternatives also the deciders often are characterized by different variables. Hence the choice data sets typically contain the following objects:
+
+- dependent variable: categorical, one out of a finite set of alternatives
+- characteristics of the alternatives
+- characteristics of the deciders
+- context information: id of the decider, ids of the alternatives
+
+Therefore, choice data contains more information than typically stored inside a `data.frame` object.
+
+### Example: Mode Choice
+
+A prime example for multinomial choice data is contained in the package **mlogit** [@Croissant:2020]:
+
+```{r mode-canada-data}
+library(mlogit)
+data("ModeCanada", package = "mlogit")
+head(ModeCanada)
+```
+
+The data describes the choice between the four alternatives 'train', 'air', 'bus' and 'car' for trips in Canada between Montreal and Toronto (see [@Croissant:2020] for more detail). The data object contains 4324 cases, treated here as $N=4324$ deciders with $T=1$ choice occasions. The data consists in revealed preference survey data, wherein deciders were asked about their decision between the alternatives.
+
+The choice set must conform to certain restrictions, see [@Train:2009]:
+
+- mutually exclusive: choosing one alternative must mean not choosing a different one
+- exhaustive: the deciders need to choose one of the alternatives; 'none of the above' may be one alternative
+- finite: the choice set must consist of a finite number of choices, else other model classes are more appropriate.
+
+The alternatives differ in terms of their characteristics:
+
+- `cost`: monetary costs
+- `ivt`: in vehicle time,
+- `ovt`: out vehicle time,
+- `frequency`: frequency of service (with 0 for cars)
+
+The deciders are characterized by the following variables:
+
+- `income`
+- `urban`: indicator of living place
+
+The remaining variables provide the context. The data set is arranged in *long* format, wherein for each decision a number of rows in the `data.frame` is used. For each alternative one row is contained. The number of alternatives per decision need not be identical (some individuals may not own a car, eliminating this alternative). The context is described using the variables:
+
+- `case`: identifying the choice occasion (multiple lines can carry the same case id)
+- `alt`: the alternative to which the row corresponds; typically a string, could be an integer
+- `choice`: Boolean, indicating whether this alternative was chosen
+- `noalt`: integer, counting the number of alternatives contained in this choice.
+
+Data can also be stored in *wide* format, where for each decision one row in the `data.frame` is
+used. In this case, variables that vary over alternatives are coded in different columns
+indicated with trailing `_car`, `_train` etc. to indicate, which alternative the column
+corresponds to. Variable characterizing the deciders do not contain trailing indicators.
+
+It follows that the choice data contains more structure than is contained in a `data.frame`.
+
+### The `choice_data` Object
+
+In **Rprobit** data is stored in an object `choice_data`. We decided to use **R6** classes for
+`choice_data`. See [here](https://r-statistics.co/R6-Classes-in-R.html) for the perils of **R6** classes.
+
+These objects allow for the verification of the properties as well as a neat representation of the data set. Generating choice data sets based on `data.frame` objects in *long* format can be done as follows:
+
+```{r create-mode-data}
+d_mode <- choice_data$new(
+  df = ModeCanada,
+  format = "long",
+  column_decider_id = "case",
+  column_alternative = "alt"
+)
+
+print(d_mode)
+```
+
+Note, that the output also lists which variables vary over alternatives and which do not. This is important information for modeling, see the section on [Model Definition](model_definition.html).
+
+```{r inspect-mode-data-frame}
+head(d_mode$df, 8)
+```
+
+If the *long* data set does not contain information on all alternatives for all choices, they are added when the `choice_data` object is created (Caution, this may take a while for larger data sets, as the procedure loops over the decisions).
+
+Printing the object shows that the data object contains more information than the `data.frame`. The class has the following fields (all are read-only):
+
+- `N`: number of deciders
+- `Tp`: vector of choice occasions per decider
+- `df`: `data.frame` holding the data
+- `format`: `"long"` or `"wide"`
+- `alt_names`: vector of names of alternatives
+- `choice_counts`: table of counts
+- `choice_frequencies`: table of frequencies of choices
+- `theta_dgp`: relevant for simulation, see below.
+
+These are all accessible from the object. For example, the choice counts and the corresponding frequencies are stored in the object:
+
+```{r inspect-mode-data}
+d_mode$choice_counts
+```
+
+```{r inspect-mode-frequencies}
+d_mode$choice_frequencies
+```
+
+### Example 2: A *Wide* Data Set
+
+A second example data set concerns the choice between two different trips in the Netherlands, see also [@Croissant:2020]. In a stated choice experiment, deciders have been asked to choose between two routes within the Dutch public transport system. The two alternatives 'A' and 'B' given are characterized via the following variables:
+
+- `price`: in Dutch guilders
+- `time`: travel time in minutes
+- `change`: integer value indicating the number of times, the train needs to be changed
+- `comfort`: category of comfort.
+
+The data set is in *wide* format. Each row corresponds to one choice. The values of the
+variables for different alternatives are provided using a trailing `_A` or `_B` for the variable labels.
+
+The data set can be imported into our data structure as for the *long* case:
+
+```{r train-data}
+data("Train", package = "mlogit")
+
+head(Train)
+```
+
+```{r create-train-data}
+d_train <- choice_data$new(
+  df = Train,
+  column_decider_id = "id",
+  column_occasion_id = "choiceid"
+)
+print(d_train)
+```
+
+```{r inspect-train-data}
+head(d_train$df, 6)
+```
+
+The data is kept in the *wide* format.
+
+### Linking Data with a Model
+
+Raw data sets as given above are the basis for modeling. Oftentimes one collects data sets with more variables than are finally used in the model. Also transformations of variables
+(such as interaction terms, quadratic terms or indicator variables derived from variables) are frequently applied.
+
+Other recoding takes place in the modeling. To this end **mlogit** uses a three-part formula to define models, categorizing the regressors into type I to type III, see the vignette on
+[Model Definition](model_definition.html) for details. Internally **Rprobit** recodes the variables to convert all variables into type I variables taking identifiability restrictions into account.
+
+One data set can be linked to a number of different models. **Rprobit** provides methods to
+calculate the design matrix for a given data set corresponding to a particular model:
+
+```{r build-design}
+m_mode <- mod$new(
+  formula = choice ~ cost + ivt | income | 0,
+  alt = length(d_mode$alt_names),
+  alt_names = d_mode$alt_names,
+  ref_alt = d_mode$alt_names[1]
+)
+
+design_mode <- d_mode$build_design(m_mode)
+design_mode[[1]]$X[[1]]
+```
+
+```{r build-second-design}
+m_mode2 <- mod$new(
+  formula = choice ~ cost | income | ivt,
+  alt = length(d_mode$alt_names),
+  alt_names = d_mode$alt_names,
+  ref_alt = d_mode$alt_names[1]
+)
+
+design_mode <- d_mode$build_design(m_mode2)
+design_mode[[1]]$X[[1]]
+```
+
+For the estimation (see details in [Model Fitting](model_fitting.html)) it is numerically
+advantageous to calculate the differences with respect to the chosen alternative:
+
+```{r difference-design}
+design_mode <- d_mode$build_design(m_mode, difference = TRUE)
+design_mode[[1]]$X[[1]]
+```
+
+```{r difference-second-design}
+design_mode <- d_mode$build_design(m_mode2, difference = TRUE)
+design_mode[[1]]$X[[1]]
+```
+
+## Simulation
+
+In research data sets often are obtained by simulation. Reasons for this may be:
+
+- investigation of a new method for estimating
+- demonstration of a method
+- generating data for bootstrapping
+- indirect inference methods
+
+**Rprobit** provides a limited support for simulation. It is our experience that most simulations are very problem specific, making it easier to program the simulation individually rather than including this functionality into the package. Nevertheless, there are a number of situations, where **Rprobit** can be of help.
+
+### Simulating a Full Data Set Including the Characteristics
+
+For investigation of a new method or demonstration purposes we may simulate data sets of given characteristics including a random choice of the characteristics. In **Rprobit** this can be done by specifying:
+
+- the model using the `mod` object
+- optionally, a parameter vector
+- a data structure providing the context such as the number of deciders and the numbers of choice occasions per decider.
+
+These objects may be defined in a sequence such as the following (for details on the definition of the model see the vignette [Model Definition](model_definition.html)):
+
+- first a model is defined for the choice between 'car' and 'bus'. It features two type I variables `quality` and `price`; one type II variable `income`; and one type III variable `time`. The dependent variable is called `choice`. The coefficient for `quality` is random.
+- the type I and III variables vary over alternatives, `income` only over deciders
+- `d_sim` sets up the object empty
+- `theta` contains the parameters. If it is not supplied, a parameter vector is drawn from independent standard normal variables.
+- applying the method `simulate()` generates the data: Here $N=3$ deciders with $1,2$ and $3$ choice occasions respectively are simulated. The covariates are drawn independently from centered normal distributions with standard deviation specified as `sd = 2`.
+
+The corresponding simulated data set is returned as a `data.frame`.
+
+```{r simulate-data}
+set.seed(1)
+m_sim <- mod$new(
+  formula = choice ~ quality + price | income | time,
+  re = "quality",
+  alt = 2,
+  alt_names = c("bus", "car"),
+  ref_alt = "bus"
+)
+
+d_sim <- choice_data$new()
+theta <- rnorm(m_sim$length_theta)
+theta[1L] <- -1 # negative price coefficient
+
+simulated <- d_sim$simulate(
+  mod = m_sim,
+  theta = theta,
+  N = 3,
+  Tp = c(1, 2, 3),
+  sd = 2 # standard deviation of centered normal distribution for covariates
+)
+
+head(simulated, 6)
+```
+
+Additionally it is also stored in the object `d_sim` due to the **R6** functionality.
+
+```{r inspect-simulated-data}
+head(d_sim$df, 6)
+```
+
+```{r inspect-simulated-counts}
+d_sim$choice_counts
+```
+
+In order to memorize the data generating process, `d_sim` also stores the parameter vector used for simulation (but not the model).
+
+### Redrawing Choices
+
+Using independent normally drawn characteristics may not be wanted. Also in bootstrapping applications one may want to simulate different choices being taken for the same model.
+**Rprobit** supports this by implementing a method to redraw choice given the choice data. Therein the characteristics and the context is left identical, only the choices are simulated newly based on the corresponding choice probabilities.
+
+To demonstrate this feature, consider the following procedure:
+
+- the `data.frame` is manipulated by subtracting $5$ for the `price` of the 'bus' alternative.
+- then the method `redraw_choices` is applied to obtain the new choices
+- note that the choices may now differ, while the characteristics only change for the `price` of bus.
+
+```{r redraw-choices}
+set.seed(1)
+modified <- simulated
+modified$price_bus <- modified$price_bus - 5
+
+redrawn <- d_sim$redraw_choices(
+  df = modified,
+  mod = m_sim,
+  column_decider_id = "id"
+)
+
+head(redrawn)
+```
+
+```{r inspect-redrawn-counts}
+d_sim$choice_counts
+```
+
+In this way, we may obtain many different draws to use them in a bootstrapping procedure.
+
+## References

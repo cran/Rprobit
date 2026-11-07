@@ -1,0 +1,216 @@
+---
+title: "Modeling Setup"
+output:
+  rmarkdown::html_vignette:
+    math_method: r-katex
+bibliography: references.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{Modeling Setup}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r global-options, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE
+)
+```
+
+```{r setup, echo = FALSE}
+library(Rprobit)
+```
+
+In this vignette we present the modeling workflow for three examples, two being real world data sets and the third using a simulated data set. The core function described is the `setup` function.
+
+## The `setup()` Function
+
+For the estimation of a multinomial probit model (MNP model) we need to
+
+- structure the data set, often contained in a `data.frame`. Details on this structuring can be found in the vignette [Data and Simulation](data_simulation.html).
+- define the model to be estimated. Details on the modeling can be found in the vignette [Model Definition](model_definition.html).
+- run the numerical estimation procedure. Details on this step can be found in the vignette [Model Fitting](model_fitting.html).
+
+The setup function combines the first two of these steps to provide an object of the `Rprobit` class. We use an **R6** class for these objects. For details on the perils of **R6** classes see [this website](https://r-statistics.co/R6-Classes-in-R.html).
+
+The input arguments for the `setup()` function depend on the use case. This will be described for three use cases in the following.
+
+### Setup Example for Empirical Choice Data in *Wide* Format
+
+In the choice data vignette [Data and Simulation](data_simulation.html) we discuss setting up the data structure for the `Train`
+data set in **mlogit** [@Croissant:2020]. For setting up the model including the data set we have to do little more than to set up the choice data structure:
+
+```{r setup-train-model}
+data("Train", package = "mlogit")
+
+train_model <- setup(
+  formula = choice ~ price + time + change | 0 | comfort,
+  df = Train,
+  column_decider_id = "id",
+  column_occasion_id = "choiceid"
+)
+train_model$mod$H_b <- train_model$mod$H_b[, -1]
+train_model$mod$f_b[1] <- -1
+train_model$mod$H_L <- matrix(c(0, 0, 1), ncol = 1)
+train_model$mod$f_L <- c(0, 0, 0)
+
+print(train_model)
+```
+
+This model assumes that the `price` coefficient is fixed at $b[1] = -1$ and includes a free Cholesky diagonal parameter for the error scale of the second alternative.
+The object `train_model` now contains the choice data set and the model.
+
+```{r inspect-train-model}
+train_model$choice_data
+```
+
+```{r inspect-train-specification}
+train_model$mod
+```
+
+Additionally the object contains information initialized to `NULL` that will be filled during the estimation:
+
+- `ll_fit` value of the criterion function after fitting
+- `hessian_fit` estimate of Hessian matrix of criterion function after fitting
+- `Vhat_fit` estimate of variance of the score vector after fitting
+- `theta_fit` estimated parameter vector
+- `theta_init` initial parameter vector
+- `theta_vcov` estimate of the variance matrix
+
+This will be filled after estimation is done. For estimation we need to define an initial estimate and subsequently run the numerical search. Details on this can be found in the vignette [Model Fitting](model_fitting.html). Here we only present the workflow for the case study:
+
+```{r fit-train-model}
+train_model$fit(print.level = 0, cml_type = "probit")
+```
+
+Now the fields in `train_model` relating to the estimated model have been filled. Thanks to the **R6** classes, there is no need to assign the output of the fitting to a new object. See the vignette [Model Fitting](model_fitting.html) for details.
+
+```{r inspect-fit-theta}
+train_model$theta_fit
+```
+
+```{r inspect-fit-ll}
+train_model$ll_fit
+```
+
+```{r inspect-fit-vcov}
+train_model$theta_vcov
+```
+
+```{r inspect-fit-hessian}
+train_model$hessian_fit
+```
+
+```{r inspect-fit-score-covariance}
+train_model$Vhat_fit
+```
+
+A summary provides more information on the fit:
+
+```{r summarize-fit}
+summary(train_model)
+```
+
+We can change the normalization and refit:
+
+```{r refit-train-model}
+train_model$mod$H_b <- diag(5)
+train_model$mod$f_b[1] <- 0
+train_model$mod$H_L <- matrix(0, 3, 0)
+train_model$mod$f_L[3] <- 1
+
+train_model$fit(print.level = 0, cml_type = "probit")
+```
+
+```{r summarize-refit}
+summary(train_model)
+```
+
+
+### Setup Example for Empirical Choice Data in *Long* Format
+
+In the choice data vignette [Data and Simulation](data_simulation.html) we discuss setting up the data structure for the `ModeCanada`
+data set in **mlogit** [@Croissant:2020]. Again setting up the model uses the function `setup`:
+
+```{r setup-mode-model}
+data("ModeCanada", package = "mlogit")
+
+mode_model <- setup(
+  formula = choice ~ cost + ivt | income | 0,
+  df = ModeCanada,
+  format = "long",
+  column_decider_id = "case",
+  column_alternative = "alt",
+  ref_alt = "train"
+)
+```
+
+```{r fit-mode-model}
+mode_model$fit(cml_type = "FP")
+```
+
+```{r summarize-mode-model}
+summary(mode_model)
+```
+
+For estimation the full pairwise composite marginal likelihood is used rather than the probit likelihood, see the vignette [Model Fitting](model_fitting.html) for details.
+
+## Setup Example for Simulated Choice Data
+
+If no empirical data are supplied, `setup()` can be used to simulate choice data. In this
+case, the input argument `alt_names` defines the number and names of alternatives. The simulation uses centered normal regressor
+values with a standard deviation set by `sd`. When no parameter vector is specified it is obtained from independent standard normal draws.
+
+```{r simulate-choice-data}
+set.seed(1)
+sim_model <- setup(
+  formula = choice ~ quality + price | income | time,
+  re = "quality",
+  alt_names = c("bus", "car", "train"),
+  ref_alt = "bus",
+  corr_re = FALSE,
+  error_struc = "diag",
+  N = 300,
+  Tp = rep(3, 300),
+  sd = 2
+)
+
+print(sim_model)
+```
+
+```{r inspect-simulated-data}
+head(sim_model$choice_data$df)
+```
+
+```{r inspect-simulated-parameters}
+sim_model$choice_data$theta_dgp
+```
+
+```{r inspect-simulated-counts}
+sim_model$choice_data$choice_counts
+```
+
+The simulated data set can be used to estimate a model and compare the results to the true parameter vector:
+
+```{r fit-simulated-model}
+sim_model$fit(
+  theta_init = NULL,
+  print.level = 0,
+  cml_type = "probit"
+)
+```
+
+```{r summarize-simulated-fit}
+summary(sim_model)
+```
+
+```{r compare-simulated-fit}
+rbind(
+  "fit" = sim_model$theta_fit,
+  "dgp" = sim_model$choice_data$theta_dgp
+) |> round(2)
+```
+
+## References

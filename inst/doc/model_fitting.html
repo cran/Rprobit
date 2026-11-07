@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8">
+<meta name="generator" content="pandoc">
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+<title>Model Fitting</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" data-external="1"></head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Model Fitting</h1>
+
+
+
+<p><strong>Rprobit</strong> implements a number of different estimation
+procedures based on the minimization of a number of different criterion
+functions:</p>
+<ol style="list-style-type: decimal">
+<li>The full probit negative log likelihood</li>
+<li>Different versions of composite marginal likelihood (CML) based on
+choice probabilities for pairs of choices.</li>
+</ol>
+<p>Here the likelihood for the multinomial probit (MNP) model is
+obtained in the following way: It is assumed that the observations for
+different individuals are independent. Thus the log likelihood is the
+sum of the log likelihood contributions of the individual deciders. For
+each decider the choice taken in the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span></span></span></span>-th decision is given by the random utility
+formulation as</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.16em" columnalign="left left left" columnspacing="1em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi>U</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mo lspace="0em" rspace="0em">=</mo></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><msub><mi>V</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo separator="true">,</mo><mi>n</mi><mo>=</mo><mn>1</mn><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><mi>N</mi><mo separator="true">,</mo><mi>t</mi><mo>=</mo><mn>1</mn><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><mi>T</mi><mo separator="true">,</mo><mi>j</mi><mo>=</mo><mn>1</mn><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><mi>J</mi><mo separator="true">,</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi>V</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mo lspace="0em" rspace="0em">=</mo></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><msubsup><mi>X</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow><mo mathvariant="normal" lspace="0em" rspace="0em">&#x2032;</mo></msubsup><mi>&#x3B2;</mi><mo>+</mo><msubsup><mi>Z</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow><mo mathvariant="normal" lspace="0em" rspace="0em">&#x2032;</mo></msubsup><mi>&#x3B3;</mi><mo separator="true">,</mo><mi>&#x3B3;</mi><mo>&#x223C;</mo><mi mathvariant="script">N</mi><mo stretchy="false">(</mo><mn>0</mn><mo separator="true">,</mo><mi mathvariant="normal">&#x3A9;</mi><mo stretchy="false">)</mo><mo separator="true">,</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mo lspace="0em" rspace="0em">=</mo></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><mrow><mo fence="true">(</mo><mtable rowspacing="0.16em" columnalign="center" columnspacing="1em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mn>1</mn></mrow></msub></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi><mi mathvariant="normal">&#x22EE;</mi><mpadded height="0em" voffset="0em"><mspace mathbackground="black" width="0em" height="1.5em"></mspace></mpadded></mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>J</mi></mrow></msub></mstyle></mtd></mtr></mtable><mo fence="true">)</mo></mrow><mo>&#x223C;</mo><mi mathvariant="script">N</mi><mo stretchy="false">(</mo><mn>0</mn><mo separator="true">,</mo><mi mathvariant="normal">&#x3A3;</mi><mo stretchy="false">)</mo></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{array}{lll}
+U_{ntj}  &amp; = &amp; V_{ntj} + e_{ntj}, n = 1,...,N, t=1,...,T,
+j=1,...,J, \\
+V_{ntj} &amp; = &amp; X_{ntj}&apos; \beta + Z_{ntj}&apos;\gamma, \gamma
+\sim {\mathcal N}(0, \Omega), \\
+e_{nt} &amp; =&amp; \begin{pmatrix} e_{nt1} \\ \vdots \\ e_{ntJ}
+\end{pmatrix} \sim {\mathcal N}(0,\Sigma)
+\end{array}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:6.6948em;vertical-align:-3.0974em;"></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:3.5974em;"><span style="top:-7.1374em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.109em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span><span style="top:-5.9374em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.2222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.1626em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:3.0974em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:3.5974em;"><span style="top:-7.1374em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mrel">=</span></span></span><span style="top:-5.9374em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mrel">=</span></span></span><span style="top:-3.1626em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mrel">=</span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:3.0974em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:3.5974em;"><span style="top:-7.1374em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.2222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">...</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">...</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">...</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.09618em;">J</span><span class="mpunct">,</span></span></span><span style="top:-5.9374em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-2.4413em;margin-left:-0.0785em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">&#x2032;</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.3948em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.05278em;">&#x3B2;</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-2.4413em;margin-left:-0.0715em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">&#x2032;</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.3948em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.05556em;">&#x3B3;</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">&#x3B3;</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&#x223C;</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathcal" style="margin-right:0.14736em;">N</span></span><span class="mopen">(</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">&#x3A9;</span><span class="mclose">)</span><span class="mpunct">,</span></span></span><span style="top:-3.1626em;"><span class="pstrut" style="height:4.38em;"></span><span class="mord"><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.35em;"><span style="top:-4.35em;"><span class="pstrut" style="height:6.2em;"></span><span style="width:0.875em;height:4.200em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.875em" height="4.200em" viewbox="0 0 875 4200"><path d="M863,9c0,-2,-2,-5,-6,-9c0,0,-17,0,-17,0c-12.7,0,-19.3,0.3,-20,1
+c-5.3,5.3,-10.3,11,-15,17c-242.7,294.7,-395.3,682,-458,1162c-21.3,163.3,-33.3,349,
+-36,557 l0,684c0.2,6,0,26,0,60c2,159.3,10,310.7,24,454c53.3,528,210,
+949.7,470,1265c4.7,6,9.7,11.7,15,17c0.7,0.7,7,1,19,1c0,0,18,0,18,0c4,-4,6,-7,6,-9
+c0,-2.7,-3.3,-8.7,-10,-18c-135.3,-192.7,-235.5,-414.3,-300.5,-665c-65,-250.7,-102.5,
+-544.7,-112.5,-882c-2,-104,-3,-167,-3,-189
+l0,-692c0,-162.7,5.7,-314,17,-454c20.7,-272,63.7,-513,129,-723c65.3,
+-210,155.3,-396.3,270,-559c6.7,-9.3,10,-15.3,10,-18z"/></svg></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:1.85em;"><span></span></span></span></span></span></span><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.38em;"><span style="top:-5.2275em;"><span class="pstrut" style="height:3.6875em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.3675em;"><span class="pstrut" style="height:3.6875em;"></span><span class="mord"><span class="mord"><span class="mord">&#x22EE;</span><span class="mord rule" style="border-right-width:0em;border-top-width:1.5em;bottom:0em;"></span></span></span></span><span style="top:-2.1675em;"><span class="pstrut" style="height:3.6875em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.09618em;">J</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:1.88em;"><span></span></span></span></span></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.35em;"><span style="top:-4.35em;"><span class="pstrut" style="height:6.2em;"></span><span style="width:0.875em;height:4.200em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.875em" height="4.200em" viewbox="0 0 875 4200"><path d="M76,0c-16.7,0,-25,3,-25,9c0,2,2,6.3,6,13c21.3,28.7,42.3,60.3,
+63,95c96.7,156.7,172.8,332.5,228.5,527.5c55.7,195,92.8,416.5,111.5,664.5
+c11.3,139.3,17,290.7,17,454c0,28,1.7,43,3.3,45l0,609
+c-3,4,-3.3,16.7,-3.3,38c0,162,-5.7,313.7,-17,455c-18.7,248,-55.8,469.3,-111.5,664
+c-55.7,194.7,-131.8,370.3,-228.5,527c-20.7,34.7,-41.7,66.3,-63,95c-2,3.3,-4,7,-6,11
+c0,7.3,5.7,11,17,11c0,0,11,0,11,0c9.3,0,14.3,-0.3,15,-1c5.3,-5.3,10.3,-11,15,-17
+c242.7,-294.7,395.3,-681.7,458,-1161c21.3,-164.7,33.3,-350.7,36,-558
+l0,-744c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
+-470,-1265c-4.7,-6,-9.7,-11.7,-15,-17c-0.7,-0.7,-6.7,-1,-18,-1z"/></svg></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:1.85em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&#x223C;</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathcal" style="margin-right:0.14736em;">N</span></span><span class="mopen">(</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">&#x3A3;</span><span class="mclose">)</span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:3.0974em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span></span></span></span></span></p>
+<p>Details on the formulation of the model can be found in the vignette
+<a href="model_definition.html">Model Definition</a>.</p>
+<p>Given this model the probability that decider <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> in her <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span></span></span></span>-th choice occasion chooses alternative
+<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi></mrow><annotation encoding="application/x-tex">j</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.854em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span></span></span></span> equals the probability</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="double-struck">P</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mrow><mi>n</mi><mi>t</mi></mrow></msub><mo>=</mo><mi>j</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">P</mi><mo stretchy="false">(</mo><msub><mi>U</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub><mo>&#x2264;</mo><msub><mi>U</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mi mathvariant="normal">&#x2200;</mi><mi>k</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">P</mi><mo stretchy="false">(</mo><msub><mi>U</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub><mo>&#x2212;</mo><msub><mi>U</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo>&#x2264;</mo><mn>0</mn><mi mathvariant="normal">&#x2200;</mi><mi>k</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">P</mi><mo stretchy="false">(</mo><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub><mo>&#x2212;</mo><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo>&#x2264;</mo><msub><mi>V</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo>&#x2212;</mo><msub><mi>V</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub><mi mathvariant="normal">&#x2200;</mi><mi>k</mi><mo stretchy="false">)</mo><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">{\mathbb P}(y_{nt} = j) = {\mathbb P}(U_{ntk} \le U_{ntj} \forall k) =
+{\mathbb P}( U_{ntk}-U_{ntj} \le 0 \forall k) =  {\mathbb P}(
+e_{ntk}-e_{ntj} \le V_{ntj}-V_{ntk}  \forall k).</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">P</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">P</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.109em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&#x2264;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.109em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord">&#x2200;</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">P</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.109em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">&#x2212;</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.9694em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.109em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&#x2264;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">0&#x2200;</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">P</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">&#x2212;</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.9221em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&#x2264;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9694em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.2222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">&#x2212;</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.2222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">&#x2200;</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">)</span><span class="mord">.</span></span></span></span></span> Since <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub></mrow><annotation encoding="application/x-tex">e_{ntk}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> are multivariate
+normally distributed, the choice probability is obtained by evaluating
+the Gaussian CDF.</p>
+<p>In a panel situation, where more than one choice occasion per decider
+is recorded, the different choices may be conditionally (on the
+regressors) independent. If <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">&#x3A9;</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\Omega&gt;0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7224em;vertical-align:-0.0391em;"></span><span class="mord">&#x3A9;</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>
+such that there are random coefficients, the choices are linked.
+Consequently the choice occasions need to be modeled jointly. The
+probability of the joint vector of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi></mrow><annotation encoding="application/x-tex">T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>
+choices then obtains as</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="double-struck">P</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mrow><mi>n</mi><mi>t</mi></mrow></msub><mo>=</mo><mi>j</mi><mo separator="true">,</mo><mi>t</mi><mo>=</mo><mn>1</mn><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><mi>T</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">P</mi><mo stretchy="false">(</mo><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub><mo>&#x2212;</mo><msub><mi>e</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo>&#x2264;</mo><msub><mi>V</mi><mrow><mi>n</mi><mi>t</mi><mi>j</mi></mrow></msub><mo>&#x2212;</mo><msub><mi>V</mi><mrow><mi>n</mi><mi>t</mi><mi>k</mi></mrow></msub><mo separator="true">,</mo><mi>k</mi><mo>=</mo><mn>1</mn><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><mi>J</mi><mo separator="true">,</mo><mi>t</mi><mo>=</mo><mn>1</mn><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><mi>T</mi><mo separator="true">,</mo><mi>k</mi><mo mathvariant="normal">&#x2260;</mo><mi>j</mi><mo stretchy="false">)</mo><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">{\mathbb P}(y_{nt} = j, t=1,...,T) = {\mathbb P}( e_{ntk}-e_{ntj} \le
+V_{ntj}-V_{ntk} , k=1,...,J , t=1,...,T, k\ne j).</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">P</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.854em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">...</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">P</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">&#x2212;</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.9221em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&#x2264;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9694em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.2222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">&#x2212;</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.2222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">&#x200B;</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">...</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.09618em;">J</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">...</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel">&#xE020;</span></span></span><span class="fix"></span></span></span></span></span><span class="mrel">=</span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span><span class="mclose">)</span><span class="mord">.</span></span></span></span></span></p>
+<p>For <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi></mrow><annotation encoding="application/x-tex">T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span> choice occasions with <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>J</mi></mrow><annotation encoding="application/x-tex">J</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.09618em;">J</span></span></span></span> choices each then a <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo stretchy="false">(</mo><mi>J</mi><mo>&#x2212;</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">T(J-1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.09618em;">J</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">&#x2212;</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span> dimensional Gaussian CDF needs to be
+evaluated. This evaluation is numerically costly.</p>
+<p>Therefore analytic approximations of the Gaussian CDF, which is used
+extensively in all criterion functions, as well as the corresponding
+gradients, are used. The package implements the Solow-Joe (SJ, <span class="citation">Solow (<a href="#ref-Solow:1990">1990</a>)</span>)
+approach. The approximations reduce the numerical load as compared to
+the usual evaluation of the Gaussian CDF. For results on the properties
+of the estimates using different approximations see <span class="citation">(<a href="#ref-Batram:2019">Batram and Bauer
+2019</a>)</span>.</p>
+<p>The full probit likelihood evaluates the choice probabilities for all
+choice occasions of a decider jointly. If no mixed coefficients are
+present then the joint probability is the product of the marginal
+probabilities and the CML approaches and the full likelihood are
+identical (for appropriate weighting in the case of unbalanced
+panels).</p>
+<p>Randomly mixed coefficients, however, introduce correlation between
+the choices such that the evaluation of the joint probability requires
+an evaluation of a potentially high dimensional normally distributed
+random variable. Numerically this is costly.</p>
+<p>The CML alleviates these problems by replacing the full likelihood
+with easier to calculate criterion functions, see <span class="citation">(<a href="#ref-Varin:2005">Varin and Vidoni 2005</a>,
+<a href="#ref-Varin:2006">2006</a>)</span>. The most often used form is
+the so called pairwise likelihood which is based on representing pairs
+of choices in the criterion function. When picking one pair of
+observations from each decider leads to a criterion function with the
+usual properties for the reduced data set. As this is so for every
+choice of the pair, the same holds for a sum of such pairwise
+likelihoods.</p>
+<div id="types-of-cml" class="section level2">
+<h2>Types of CML</h2>
+<p>Using pairwise CMLs leads to a criterion function that trades off
+numerical load with statistical efficiency. The pairwise probabilities
+are faster to calculate, but there is no guarantee that the CML based
+approach achieves the Cramer Rao lower bound. In the literature it is
+shown using simulations that in some cases the price in terms of
+asymptotic variance is small while the computational gain is large (cf.
+<span class="citation">Bhat and Sidharthan (<a href="#ref-Bhat:2011">2011</a>)</span>).</p>
+<p>Depending on which pairs are chosen, the tradeoff between numerical
+speed and variance is different. The standard choices are:</p>
+<ol style="list-style-type: decimal">
+<li><code>cml_type = &quot;FP&quot;</code>: full pairwise, includes all pairs of
+choices.</li>
+<li><code>cml_type = &quot;AC&quot;</code>: adjacent pairwise chained. This uses
+all adjacent pairs plus the pair of the first and the last choice. This
+structure is aimed at cyclical situations such as surveys over all
+weekdays, such that Sunday and Monday are adjacent days.</li>
+<li><code>cml_type = &quot;AP&quot;</code>: adjacent pairwise.</li>
+</ol>
+</div>
+<div id="optimization-parameters" class="section level2">
+<h2>Optimization Parameters</h2>
+<p>The optimization uses the R function <code>nlm</code> for the
+numerical search. This function contains many input arguments that can
+be specified also for the fit function of <strong>Rprobit</strong>.
+Amongst the most prominent of those is the argument
+<code>print.level</code> which controls the output presented in the
+screen. The most often used arguments are <code>print.level = 0</code>
+(no output) and <code>print.level = 2</code> (output per iteration).</p>
+</div>
+<div id="initial-estimates" class="section level2">
+<h2>Initial Estimates</h2>
+<p>The numerical search needs to be started at an initial estimate. A
+numeric parameter vector can be supplied through
+<code>theta_init</code>, which is useful for simulated data sets where
+the true underlying parameter vector is known. If
+<code>theta_init = NULL</code>, <strong>Rprobit</strong> applies its
+initialization procedure.</p>
+<p>In <strong>Rprobit</strong> a strategy is used, that is described in
+<span class="citation">(<a href="#ref-Oelschlaeger:2026">Oelschl&#xE4;ger
+2026</a>)</span>: The fast initialization method uses the structure of
+the problem to obtain a rough guess, which can be shown to be consistent
+for the true parameter vector under appropriate assumptions. Simulations
+in <span class="citation">(<a href="#ref-Oelschlaeger:2026">Oelschl&#xE4;ger
+2026</a>)</span> document that the approach leads to numerical gains
+compared to random initialization.</p>
+</div>
+<div id="example" class="section level2">
+<h2>Example</h2>
+<p>Conversion of the Train data set <span class="citation">(<a href="#ref-Croissant:2020">Croissant 2020</a>)</span> into a
+<code>Rprobit</code> object is described in the vignette <a href="data_simulation.html">Data and Simulation</a>. The model can be
+set up as described in detail in <a href="modeling_setup.html">Modeling
+Setup</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;Train&quot;</span>, <span class="at">package =</span> <span class="st">&quot;mlogit&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>train_model <span class="ot">&lt;-</span> <span class="fu">setup</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">formula =</span> choice <span class="sc">~</span> price <span class="sc">+</span> time <span class="sc">+</span> change <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> comfort,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">df =</span> Train,</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="at">re =</span> <span class="fu">c</span>(<span class="st">&quot;time&quot;</span>),</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="at">column_decider_id =</span> <span class="st">&quot;id&quot;</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  <span class="at">column_occasion_id =</span> <span class="st">&quot;choiceid&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>train_model<span class="sc">$</span>mod<span class="sc">$</span>H_b <span class="ot">&lt;-</span> train_model<span class="sc">$</span>mod<span class="sc">$</span>H_b[, <span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>train_model<span class="sc">$</span>mod<span class="sc">$</span>f_b[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.001</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>train_model<span class="sc">$</span>mod<span class="sc">$</span>H_L <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>train_model<span class="sc">$</span>mod<span class="sc">$</span>f_L <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">print</span>(train_model)</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt; &lt;Rprobit object&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; Deciders: 235</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt; Choice occasions: from 5 to 19</span></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; Formula: choice ~ price + time + change | 0 | comfort</span></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt; Random effects: time</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co">#&gt; Utility equations:</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a><span class="co">#&gt;   U_A = b[1] * price_A + b[2] * change_A + b[3] * comfort_A + b[5] * time_A + eps[1]</span></span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a><span class="co">#&gt;   U_B = b[1] * price_B + b[2] * change_B + b[4] * comfort_B + b[5] * time_B + eps[2]</span></span></code></pre></div>
+<p>Having set up the model we may estimate it using the method
+<code>fit</code> for the <strong>R6</strong> object:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>train_model<span class="sc">$</span><span class="fu">fit</span>(<span class="at">cml_type =</span> <span class="st">&quot;probit&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; Looking for initial values...</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; Starting numerical optimization...</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; Calculating approximated Hessian at estimate...</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Done.</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>elapsed_time <span class="ot">&lt;-</span> end_time <span class="sc">-</span> start_time</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>elapsed_time</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; Time difference of 40.47827 secs</span></span></code></pre></div>
+<p>The initialization procedure finds initial values that are already
+close to the optimum:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">rbind</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="st">&quot;init&quot;</span> <span class="ot">=</span> train_model<span class="sc">$</span>theta_init,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="st">&quot;fit&quot;</span> <span class="ot">=</span> train_model<span class="sc">$</span>theta_fit</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;       [,1]  [,2]  [,3]  [,4] [,5] [,6]</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; init -0.23 -0.68 -0.70 -0.02 0.09 1.39</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; fit  -0.23 -0.66 -0.68 -0.02 0.03 1.02</span></span></code></pre></div>
+<p>The properties of the estimated model are stored in the object and
+can be printed:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">summary</span>(train_model)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; Rprobit model summary</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Formula:</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; choice ~ price + time + change | 0 | comfort </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; Data:</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;   Deciders: 235 </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt;   Choice occasions: 2929 </span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;   Choice occasions per decider: 5 to 19 </span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;   Alternatives: 2 (A, B)</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; Response residuals:</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;                A         B</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; Min    -0.984846 -0.976685</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; 1Q     -0.398610 -0.407042</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; Median  0.008985 -0.008985</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; 3Q      0.407042  0.398610</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; Max     0.976685  0.984846</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; price            -0.0010000         NA      NA       NA    </span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; change           -0.2268586  0.0307086  -7.387 1.50e-13 ***</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; comfort_A        -0.6588193  0.0285801 -23.052  &lt; 2e-16 ***</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; comfort_B        -0.6783702  0.0284627 -23.834  &lt; 2e-16 ***</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; time             -0.0214950  0.0028834  -7.455 9.01e-14 ***</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; Omega[time,time]  0.0007551  0.0001308   5.772 7.84e-09 ***</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; Sigma[A,A]        0.0000000         NA      NA       NA    </span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; Sigma[B,A]        0.0000000         NA      NA       NA    </span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; Sigma[B,B]        1.0429832  0.0737552  14.141  &lt; 2e-16 ***</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &apos;***&apos; 0.001 &apos;**&apos; 0.01 &apos;*&apos; 0.05 &apos;.&apos; 0.1 &apos; &apos; 1</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; Random-effect covariance matrix (Omega):</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt;           time</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; time 0.0007551</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; Error covariance matrix (Sigma):</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt;   A     B</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; A 0 0.000</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; B 0 1.043</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; Prediction summary:</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt;                                 A      B</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; Observed choice frequency  0.5032 0.4968</span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; Mean predicted probability 0.5013 0.4987</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; Fit statistics:</span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt;   Log-likelihood: -1696 </span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt;   AIC:  3404 </span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt;   BIC:  3440</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">coef</span>(train_model)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt;       price      change   comfort_A   comfort_B        time </span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; -0.00100000 -0.22685856 -0.65881933 -0.67837017 -0.02149496</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">confint</span>(train_model)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;                 2.5 %      97.5 %</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; price              NA          NA</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; change    -0.28704630 -0.16667083</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; comfort_A -0.71483534 -0.60280331</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; comfort_B -0.73415595 -0.62258440</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; time      -0.02714636 -0.01584357</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">vcov</span>(train_model)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt;           price       change    comfort_A    comfort_B         time</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; price         0 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; change        0 9.430177e-04 1.439521e-04 5.714975e-05 2.133815e-05</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; comfort_A     0 1.439521e-04 8.168235e-04 4.059792e-04 4.524468e-06</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; comfort_B     0 5.714975e-05 4.059792e-04 8.101225e-04 1.182383e-06</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; time          0 2.133815e-05 4.524468e-06 1.182383e-06 8.314096e-06</span></span></code></pre></div>
+<p>A different criterion function can be used for estimation:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>train_2 <span class="ot">&lt;-</span> <span class="fu">fit</span>(train_model, <span class="at">theta_init =</span> <span class="cn">NULL</span>, <span class="at">print.level =</span> <span class="dv">0</span>, <span class="at">cml_type =</span> <span class="st">&quot;AP&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; Looking for initial values...</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Starting numerical optimization...</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; Calculating approximated Hessian at estimate...</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; Done.</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>elapsed_time2 <span class="ot">&lt;-</span> end_time <span class="sc">-</span> start_time</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>elapsed_time2</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; Time difference of 16.60883 secs</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">summary</span>(train_2)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; Rprobit model summary</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; Formula:</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; choice ~ price + time + change | 0 | comfort </span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; Data:</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;   Deciders: 235 </span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;   Choice occasions: 2929 </span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;   Choice occasions per decider: 5 to 19 </span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt;   Alternatives: 2 (A, B)</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; Response residuals:</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt;               A        B</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; Min    -0.98002 -0.97170</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; 1Q     -0.40360 -0.41210</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; Median  0.01396 -0.01396</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; 3Q      0.41210  0.40360</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; Max     0.97170  0.98002</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; price            -0.0010000         NA      NA       NA    </span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; change           -0.2052902  0.0474599  -4.326 1.52e-05 ***</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt; comfort_A        -0.6554253  0.0543279 -12.064  &lt; 2e-16 ***</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; comfort_B        -0.6730138  0.0561024 -11.996  &lt; 2e-16 ***</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt; time             -0.0188856  0.0024844  -7.602 2.92e-14 ***</span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt; Omega[time,time]  0.0010144  0.0002494   4.067 4.75e-05 ***</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt; Sigma[A,A]        0.0000000         NA      NA       NA    </span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; Sigma[B,A]        0.0000000         NA      NA       NA    </span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; Sigma[B,B]        1.1565400  0.1414721   8.175 2.96e-16 ***</span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &apos;***&apos; 0.001 &apos;**&apos; 0.01 &apos;*&apos; 0.05 &apos;.&apos; 0.1 &apos; &apos; 1</span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt; Random-effect covariance matrix (Omega):</span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="co">#&gt;          time</span></span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt; time 0.001014</span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; Error covariance matrix (Sigma):</span></span>
+<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a><span class="co">#&gt;   A     B</span></span>
+<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a><span class="co">#&gt; A 0 0.000</span></span>
+<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a><span class="co">#&gt; B 0 1.157</span></span>
+<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a><span class="co">#&gt; Prediction summary:</span></span>
+<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a><span class="co">#&gt;                                 A      B</span></span>
+<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a><span class="co">#&gt; Observed choice frequency  0.5032 0.4968</span></span>
+<span id="cb11-48"><a href="#cb11-48" tabindex="-1"></a><span class="co">#&gt; Mean predicted probability 0.5009 0.4991</span></span>
+<span id="cb11-49"><a href="#cb11-49" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-50"><a href="#cb11-50" tabindex="-1"></a><span class="co">#&gt; Fit statistics:</span></span>
+<span id="cb11-51"><a href="#cb11-51" tabindex="-1"></a><span class="co">#&gt;   Log-likelihood: -1750 </span></span>
+<span id="cb11-52"><a href="#cb11-52" tabindex="-1"></a><span class="co">#&gt;   AIC:  3512 </span></span>
+<span id="cb11-53"><a href="#cb11-53" tabindex="-1"></a><span class="co">#&gt;   BIC:  3548</span></span></code></pre></div>
+<p>The AP criterion is much faster in this example. Because the two fits
+optimize different criterion functions, their criterion values are not
+directly comparable.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">c</span>(<span class="fu">logLik</span>(train_model), <span class="fu">logLik</span>(train_2))</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; [1] -1695.945 -1750.118</span></span></code></pre></div>
+<p>Their estimated standard errors can be compared as follows:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>V_probit <span class="ot">&lt;-</span> <span class="fu">vcov</span>(train_model)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>V_ap <span class="ot">&lt;-</span> <span class="fu">vcov</span>(train_2)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="fu">cbind</span>(<span class="fu">sqrt</span>(<span class="fu">diag</span>(V_probit)), <span class="fu">sqrt</span>(<span class="fu">diag</span>(V_ap)))</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;                  [,1]        [,2]</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; price     0.000000000 0.000000000</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; change    0.030708593 0.047459882</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; comfort_A 0.028580124 0.054327931</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; comfort_B 0.028462651 0.056102424</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; time      0.002883417 0.002484365</span></span></code></pre></div>
+<div id="model-diagnostics" class="section level3">
+<h3>Model Diagnostics</h3>
+<p>Beside the fitted model also the predictions of the choice
+probabilities as well as residuals are of interest. These can be
+obtained as follows:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">residuals</span>(train_model)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">apply</span>(res, <span class="dv">2</span>, mean)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt;            A            B </span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt;  0.001922934 -0.001922934</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(train_model)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">plot</span>(probs[, <span class="dv">1</span>], res[, <span class="dv">1</span>], <span class="at">xlab =</span> <span class="st">&quot;Choice probabilities&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Residuals&quot;</span>)</span></code></pre></div>
+<p><img role="img" aria-label src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAHgCAIAAAD17khjAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAgAElEQVR4nOzdZ3xUxd4H8DlnWza9kN4ILQRIQifSQ0B676CIQUSuhSYo1qvcqyACFxEVpAmKCEhROoTeAqEGQkJLSEgjCanbd888L0b3iWkEsmE3m9/3hZ/l7Nmzc7xefjtzZv7DUUoJAAAAWBfe3A0AAAAA00PAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBVCwAMAAFghBDwAAIAVQsADAABYIQQ8AACAFULAAwAAWCEEPAAAgBUSm7sBRtqc+BNHTl9JTMnKL1bpxXLHBv5Nwzr16tUpyFFk7rYBAADUMRYR8Lrkne9PfnvlqQyt2K6Bl6eLvZTXq4tys7IL1MSxxZgFG75/q70TZ+5WAgAA1B0WEPD6+K/GTPxRM3rRvnkTIlu4y4xJLijSrxz66b9z3xv6lt+1jcMb1DDi58yZc+LEiZq2FgAAoNrkcvn27ds9PT2f/1ebP+D1N3/ferPVB5fXzWheZiiet/NtN/yDXz0fhw749ahi+Bj7mn3R2bNn33rrrdDQ0JpdBgAAoLrGjx+fnZ1dTwOeaNQazsnZqbLpfmIXV0dDklpviq9q3rx5u3btTHElAACAJ5PL5eb6avPPohe3erG3x6lFb397Nktb9j2qfHD4yxkrbrfr08XRHG0DAACooyygB28b+dm6udfHze4a8EnDVuEhQd6u9lLOoCnOTb9342pCBm068fvdbzQ2/y8RAACAusMCAp5wbpELjidNOLRt+4EzVxNTUu880Bgkcid3/86TRn08fMzQDt5SczcRAACgbrGEgCeEEN45pN/Uj/tNNXc7AAAArILFj3wb7u/+4r35q84VUXO35EkUCkVubq65WwEAAEBIHQh4IS1m1ZKlW6+WVOPckydPNq7cxYsXr1+/XhttPHPmTFBQkKOjo7u7u0QiGTx4sEKhqI0vAgAAqCZLGaKvlOSFBbGp70ucvapR5qZr166HDx+u7N2wsDCeN/0PmtjY2N69ezdt2jQ2NjYsLGz//v3R0dEhISF3796VSjF5AAAAzMPiA55Inbx8nKp3Ks/zjRo1quxdjquVarezZs1ycnKKi4tjcT506NArV640adJk/fr106ZNy8jIWLFixbFjxwghXbt2fe+999zd3WujGQAAAKVZ/BC9xbt+/fqIESNKd9YDAgK8vb337t27f//+0NDQH3/8UaFQODo6rlu3zt/ff8OGDeZrLAAA1BcI+JriOE4sLjsQIgiCTqeLjo6WSqUrV66Mj48/dOhQTk5O27ZtZ86ceenSJbM0FQAA6g9LCHiqUysVVVJqTFKptlaEh4fv3r2b0v+f5Z+YmJibmxsYGOjm5taqVauxY8ey4yKR6KOPPvL09Fy3bp3x5Ozs7C+//HLSpEmzZs3avHmzVluunB8AAMDTs4CAN9xd3svVwb4qLgN+zLDUZXLff/99VlZWly5dUlNTtVrt7t27O3fubG9v/8ILL0il0hYtWpQ+2dvb22AwJCcnsz/u27cvPDw8KSkpNjb2m2++mThxokwmCwwMPHXqlDluBQAArIcFTLITNX336P1O30+fMHcvGfzZF6Malv/RIfLq6GKp+8GHhoaePXt2zJgxDRs2JIRwHNe5c+fNmzdnZ2c/evQoIyOj9MnXr193cXFh8+yKioqio6M3b948btw4rVa7efPmXr16RUZGchwXFRV17NixLl26mOWOAADAClhAwBNCbHy6vbP47d8Ob2w1YPzENpbRpqfQrl27e/fu6fX65ORkf39/GxsbQoifn5+Hh8f+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" alt style="display: block; margin: auto;"></p>
+<p>The plot shows that the residuals are given as the choices minus the
+choice probabilities.</p>
+<p>Additionally predicted choice probabilities can also be obtained for
+a new data set:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>prediction_df <span class="ot">&lt;-</span> Train[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>, ]</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>prediction_df[, <span class="st">&quot;price_A&quot;</span>] <span class="ot">&lt;-</span> <span class="dv">3000</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>prediction_df[, <span class="st">&quot;time_A&quot;</span>] <span class="ot">&lt;-</span> <span class="dv">120</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>prediction_df[, <span class="st">&quot;choice&quot;</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>prediction_data <span class="ot">&lt;-</span> choice_data<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">df =</span> prediction_df,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">column_decider_id =</span> <span class="st">&quot;id&quot;</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>new_probabilities <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  train_model,</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>  <span class="at">newdata =</span> prediction_data,</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;probabilities&quot;</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>)</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>new_probabilities</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt;           A         B</span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; 1 0.8976261 0.1023739</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co">#&gt; 2 0.6594053 0.3405947</span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; 3 0.5897089 0.4102911</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; 4 0.5563572 0.4436428</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; 5 0.5563572 0.4436428</span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; 6 0.3578979 0.6421021</span></span></code></pre></div>
+</div>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Batram:2019" class="csl-entry">
+Batram, M., and D. Bauer. 2019. <span>&#x201C;On Consistency of the
+<span>MACML</span> Approach to Discrete Choice Modelling.&#x201D;</span>
+<em>Journal of Choice Modelling</em> 30: 1&#x2013;16. <a href="https://doi.org/10.1016/j.jocm.2018.10.001">https://doi.org/10.1016/j.jocm.2018.10.001</a>.
+</div>
+<div id="ref-Bhat:2011" class="csl-entry">
+Bhat, C., and R. Sidharthan. 2011. <span>&#x201C;A Simulation Evaluation of the
+Maximum Approximate Composite Marginal Likelihood (<span>MACML</span>)
+Estimator for Mixed Multinomial Probit Models.&#x201D;</span>
+<em>Transportation Research Part B: Methodological</em> 45 (7): 940&#x2013;53.
+</div>
+<div id="ref-Croissant:2020" class="csl-entry">
+Croissant, Y. 2020. <span>&#x201C;Estimation of Random Utility Models in
+<span>R</span>: The <span class="nocase">mlogit</span> Package.&#x201D;</span>
+<em>Journal of Statistical Software</em> 95 (11). <a href="https://doi.org/10.18637/jss.v095.i11">https://doi.org/10.18637/jss.v095.i11</a>.
+</div>
+<div id="ref-Oelschlaeger:2026" class="csl-entry">
+Oelschl&#xE4;ger, L. 2026. <span>&#x201C;Overcoming Challenges in Modeling Choice
+Behavior Heterogeneity.&#x201D;</span> PhD thesis, Bielefeld University. <a href="https://pub.uni-bielefeld.de/record/3014719">https://pub.uni-bielefeld.de/record/3014719</a>.
+</div>
+<div id="ref-Solow:1990" class="csl-entry">
+Solow, A. 1990. <span>&#x201C;A Method for Approximating Multivariate Normal
+Orthant Probabilities.&#x201D;</span> <em>Journal of Statistical Computation
+and Simulation</em> 37 (3-4): 225&#x2013;29.
+</div>
+<div id="ref-Varin:2005" class="csl-entry">
+Varin, C., and P. Vidoni. 2005. <span>&#x201C;A Note on Composite Likelihood
+Inference and Model Selection.&#x201D;</span> <em>Biometrika</em> 92 (3):
+519&#x2013;28.
+</div>
+<div id="ref-Varin:2006" class="csl-entry">
+Varin, C., and P. Vidoni. 2006. <span>&#x201C;Pairwise Likelihood Inference for
+Ordinal Categorical Time Series.&#x201D;</span> <em>Computational Statistics
+&amp; Data Analysis</em> 51 (4): 2365&#x2013;73.
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+
+</body>
+</html>
+

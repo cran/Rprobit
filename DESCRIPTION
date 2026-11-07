@@ -1,0 +1,49 @@
+Package: Rprobit
+Type: Package
+Title: Estimation of Multinomial Probit Models
+Version: 1.0.0
+Authors@R: c(
+    person(given = "Dietmar", 
+           family = "Bauer", 
+           role = c("aut", "cre"),
+           email = "dietmar.bauer@uni-bielefeld.de"),
+    person(given = "Manuel", 
+           family = "Batram", 
+           role = "aut",
+           email = ""),
+    person(given = "Sebastian", 
+           family = "B\U00FCscher", 
+           role = "aut",
+           email = "sebastian.buescher@uni-bielefeld.de"),
+    person(given = "Lennart",
+           family = "Oelschl\U00E4ger",
+           role = "aut",
+           email = "lennart.oelschlaeger@uni-bielefeld.de"),
+    person(given = "Thanh Thao",
+           family = "Bui",
+           role = "aut",
+           email = "thanh.bui@uni-bielefeld.de")
+    )
+Description: Estimation of multinomial probit models based 
+    on panel data. It uses the full likelihood as well as the MaCML approach. 
+    The multinomial Gaussian CDF is approximated using the Solow-Joe method. 
+License: GPL (>= 3)
+Encoding: UTF-8
+Imports: checkmate, ggplot2, graphics, oeli, R6, Rcpp, RprobitB, stats
+LinkingTo: Rcpp, RcppEigen
+Depends: R (>= 4.1.0)
+Suggests: katex, knitr, mlogit, rmarkdown (>= 2.12), testthat (>=
+        3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
+NeedsCompilation: yes
+Packaged: 2026-10-23 15:27:03 UTC; dbauer2@ad.uni-bielefeld.de
+Author: Dietmar Bauer [aut, cre],
+  Manuel Batram [aut],
+  Sebastian Büscher [aut],
+  Lennart Oelschläger [aut],
+  Thanh Thao Bui [aut]
+Maintainer: Dietmar Bauer <dietmar.bauer@uni-bielefeld.de>
+Repository: CRAN
+Date/Publication: 2026-11-07 15:30:10 UTC
